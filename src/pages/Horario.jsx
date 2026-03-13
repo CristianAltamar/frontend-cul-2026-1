@@ -1,12 +1,34 @@
 import { useEffect, useState } from "react";
 import { getHorarioDocente } from "../services/horarioService.js";
+import { decodeToken } from "../utils/decodeToken.js";
+import { useNavigate  } from "react-router-dom";
 
 export function Horario(){
     const [horario,setHorario] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(()=>{
         const cargarHorario = async ()=>{
-            const data = await getHorarioDocente(1);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("No token found");
+                navigate("/login");
+                return;
+            }
+            const d = decodeToken(token);
+            if (!d) {
+                console.error("Invalid token");
+                localStorage.removeItem('token');
+                navigate("/login");
+                return;
+            }
+            if (d.rol !== 2) {
+                console.error("Unauthorized access");
+                localStorage.removeItem('token');
+                navigate("/login");
+                return;
+            }
+            const data = await getHorarioDocente(d.user_id);
             setHorario(data);
         }
         cargarHorario();

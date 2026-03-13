@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { login } from "../services/authService";
 import { useNavigate, Link } from "react-router-dom";
+import { decodeToken } from "../utils/decodeToken.js";
 
 export function Login(){
     const [email,setEmail] = useState("");
@@ -13,6 +14,11 @@ export function Login(){
         try{
             const data = await login(email,password);
             localStorage.setItem("token",data.access_token);
+            const decodedtoken = decodeToken(data.access_token);
+            if (decodedtoken.rol === 1) {
+                navigate("/admin");
+                return;
+            }
             navigate("/horario");
         }catch(err){
             alert("Credenciales incorrectas");

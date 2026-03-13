@@ -7,11 +7,11 @@ export function Home(){
             <p>Selecciona una opción</p>
             <div>
                 <Link to="/login">
-                <button>Login</button>
+                    <button>Login</button>
                 </Link>
 
                 <Link to="/register">
-                <button>Crear usuario</button>
+                    <button>Crear usuario</button>
                 </Link>
             </div>
         </div>
