@@ -19,7 +19,7 @@ export function Login(){
                 navigate("/admin");
                 return;
             }
-            navigate("/horario");
+            navigate("/docente");
         }catch(err){
             alert("Credenciales incorrectas");
         }

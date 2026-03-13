@@ -29,7 +29,7 @@ export function Horario(){
                 return;
             }
             const data = await getHorarioDocente(d.user_id);
-            setHorario(data);
+            setHorario(data.resultado);
         }
         cargarHorario();
     },[])

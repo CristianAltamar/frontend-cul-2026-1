@@ -16,18 +16,18 @@ export function Register(){
 
     const handleChange = (e)=>{
         setForm({
-        ...form,
-        [e.target.name]: e.target.value
+            ...form,
+            [e.target.name]: e.target.value
         });
     };
 
     const handleSubmit = async (e)=>{
         e.preventDefault();
         try{
-        await createUser(form);
-        alert("Usuario creado");
+            await createUser(form);
+            alert("Usuario creado");
         }catch(err){
-        alert("Error creando usuario");
+            alert("Error creando usuario");
         }
     };
 
