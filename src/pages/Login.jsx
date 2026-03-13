@@ -13,7 +13,7 @@ export function Login(){
         try{
             const data = await login(email,password);
             localStorage.setItem("token",data.access_token);
-            navigate("/dashboard");
+            navigate("/horario");
         }catch(err){
             alert("Credenciales incorrectas");
         }
