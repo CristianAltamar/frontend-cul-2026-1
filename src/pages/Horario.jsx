@@ -35,26 +35,41 @@ export function Horario(){
     },[])
 
     return(
-        <div>
-            <h2>Horario del profesor</h2>
-            <table>
-                <thead>
-                <tr>
-                    <th>Día</th>
-                    <th>Hora inicio</th>
-                    <th>Hora fin</th>
-                </tr>
-                </thead>
-                <tbody>
-                {horario.map(h => (
-                    <tr key={h.id_horario}>
-                        <td>{h.dia}</td>
-                        <td>{h.hora_inicio}</td>
-                        <td>{h.hora_fin}</td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+        <div className="min-h-screen bg-neutral-50 px-6 py-12 font-sans">
+            <div className="max-w-5xl mx-auto space-y-10">
+                <div className="border-b border-neutral-200 pb-5">
+                    <h2 className="text-3xl font-semibold text-neutral-800 tracking-tight">Horario del Docente</h2>
+                    <p className="mt-2 text-sm text-neutral-500">Revisa tus clases programadas para la semana</p>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                            <thead className="bg-neutral-50 border-b border-neutral-100 text-neutral-600 font-medium">
+                            <tr>
+                                <th className="px-6 py-4">Día</th>
+                                <th className="px-6 py-4">Hora de Inicio</th>
+                                <th className="px-6 py-4 text-right">Hora de Fin</th>
+                            </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-100 text-neutral-800">
+                            {horario.map(h => (
+                                <tr key={h.id_horario} className="hover:bg-neutral-50/50 transition-colors">
+                                    <td className="px-6 py-4 font-semibold capitalize">{h.dia}</td>
+                                    <td className="px-6 py-4 font-medium text-neutral-600">{h.hora_inicio}</td>
+                                    <td className="px-6 py-4 text-right font-medium text-neutral-600">{h.hora_fin}</td>
+                                </tr>
+                            ))}
+                            {horario.length === 0 && (
+                                <tr>
+                                    <td colSpan="3" className="px-6 py-12 text-center text-neutral-500 italic">No hay horarios asignados por el momento.</td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
