@@ -1,20 +1,30 @@
 import { useState } from "react";
-import { createUser } from "../services/userservice.js";
+import { createUser } from "../services/userService.js";
 
 export function Register(){
     const [form,setForm] = useState({
+        tipo_documento:"",
+        n_documento:0,
         primer_nombre:"",
         segundo_nombre:"",
         primer_apellido:"",
         segundo_apellido:"",
+        telefono:"",
         email:"",
         password_hash:"",
         id_rol:2,
         rol:null,
-        activo:true
+        estado:true
     });
 
     const handleChange = (e)=>{
+        if (e.target.name === "n_documento") {
+            setForm({
+                ...form,
+                [e.target.name]: parseInt(e.target.value)
+            });
+            return;
+        }
         setForm({
             ...form,
             [e.target.name]: e.target.value
@@ -39,8 +49,36 @@ export function Register(){
                     <p className="mt-2 text-sm text-neutral-500">Completa tus datos para registrarte</p>
                 </div>
 
+                {/* FORMULARIO DE REGISTRO */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-neutral-700">Tipo documento</label>
+                            <select
+                                name="tipo_documento"
+                                required
+                                value={form.tipo_documento}
+                                className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all text-sm text-neutral-800"
+                                onChange={handleChange}
+                            >
+                                <option value="">Selecciona un tipo</option>
+                                <option value="CC">Cédula de Ciudadanía</option>
+                                <option value="CE">Cédula de Extranjería</option>
+                                <option value="TI">Tarjeta de Identidad</option>
+                                <option value="PP">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-neutral-700">Número documento</label>
+                            <input
+                                type="number"
+                                name="n_documento"
+                                placeholder="..."
+                                required
+                                className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all text-sm text-neutral-800"
+                                onChange={handleChange}
+                            />
+                        </div>
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-neutral-700">Primer Nombre</label>
                             <input
@@ -82,6 +120,17 @@ export function Register(){
                                 onChange={handleChange}
                             />
                         </div>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-neutral-700">Telefono</label>
+                        <input
+                            type="number"
+                            name="telefono"
+                            placeholder="..."
+                            required
+                            className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all text-sm text-neutral-800"
+                            onChange={handleChange}
+                        />
                     </div>
 
                     <div className="space-y-1 mt-4">
