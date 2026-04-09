@@ -12,8 +12,11 @@ export function Login(){
     const handleSubmit = async (e) => {
         e.preventDefault();
         try{
+            // Realizar la solicitud de inicio de sesión
             const data = await login(email,password);
+            // Guardar el token en localStorage
             localStorage.setItem("token",data.access_token);
+            // Decodificar el token para obtener el rol del usuario
             const decodedtoken = decodeToken(data.access_token);
             if (decodedtoken.rol === 1) {
                 navigate("/admin");
@@ -54,7 +57,7 @@ export function Login(){
                         />
                     </div>
 
-                    <button type="submit" className="w-full !mt-6 py-2.5 px-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 outline-none">
+                    <button type="submit" className="w-full mt-6 py-2.5 px-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 outline-none cursor-pointer">
                         Ingresar
                     </button>
                     

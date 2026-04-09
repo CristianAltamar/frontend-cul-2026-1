@@ -3,9 +3,9 @@ import { Login } from "../pages/Login.jsx";
 import { Register } from "../pages/Register.jsx";
 import { Home } from "../pages/Home.jsx";
 import { Horario } from "../pages/Horario.jsx";
-import { AdminPanel } from "../pages/admin.jsx";
-import { SalonAdmin } from "../pages/Salon.jsx";
+import { AdminPanel } from "../pages/Admin.jsx";
 import { Docente } from "../pages/Docente.jsx";
+import { Disponibilidad } from "../pages/Disponibilidad.jsx";
 
 export function AppRoutes(){
     return(
@@ -16,8 +16,8 @@ export function AppRoutes(){
                 <Route path="/register" element={<Register/>} />
                 <Route path="/horario" element={<Horario/>} />
                 <Route path="/admin" element={<AdminPanel/>} />
-                <Route path="/salones" element={<SalonAdmin/>} />
                 <Route path="/docente" element={<Docente/>} />
+                <Route path="/disponibilidad" element={<Disponibilidad/>} />
             </Routes>
         </BrowserRouter>
     );

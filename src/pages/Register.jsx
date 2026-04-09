@@ -105,7 +105,7 @@ export function Register(){
                         />
                     </div>
 
-                    <button type="submit" className="w-full !mt-8 py-2.5 px-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 outline-none">
+                    <button type="submit" className="w-full mt-8 py-2.5 px-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 outline-none">
                         Registrarte
                     </button>
                     

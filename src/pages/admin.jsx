@@ -7,6 +7,7 @@ export function AdminPanel(){
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Verificar que el usuario tenga un token válido y el rol de docente
         const token = localStorage.getItem('token');
         if (!token) {
             console.error("No token found");

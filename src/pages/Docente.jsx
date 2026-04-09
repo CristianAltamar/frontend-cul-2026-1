@@ -6,6 +6,7 @@ export function Docente(){
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Verificar que el usuario tenga un token válido y el rol de docente
         const token = localStorage.getItem('token');
         if (!token) {
             console.error("No token found");
@@ -38,7 +39,7 @@ export function Docente(){
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Link to="/horarios" className="group block h-full">
+                    <Link to="/horario" className="group block h-full">
                         <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
                             <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Horarios</h3>
                             <p className="mt-2 text-sm text-neutral-500">Visualiza tus clases programadas</p>
@@ -49,13 +50,6 @@ export function Docente(){
                         <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
                             <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Disponibilidad</h3>
                             <p className="mt-2 text-sm text-neutral-500">Gestiona tus cupos y horas libres</p>
-                        </div>
-                    </Link>
-                    
-                    <Link to="/salones" className="group block h-full">
-                        <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
-                            <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Salones</h3>
-                            <p className="mt-2 text-sm text-neutral-500">Consulta los salones asignados</p>
                         </div>
                     </Link>
                 </div>
