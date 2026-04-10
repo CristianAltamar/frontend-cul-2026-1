@@ -1,14 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { getDisponibilidadDocente } from "../services/DisponibilidadService.js";
+import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
 import { decodeToken } from "../utils/decodeToken.js";
+import { createSchedule, procesoDisponibilidad } from "../utils/schedule.js";
+
+const startTime = "08:00";
+const endTime = "22:00:00";
+const durationMinutes = 45;
 
 export const Disponibilidad = () => {
     const [semestre, setSemestre] = useState("2024-1");
     const [disponibilidad, setDisponibilidad] = useState({});
 
     const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const horas = Array.from({ length: 16 }, (_, i) => `${7 + i}:00`);
+    const { scheduleStart, scheduleEnd } = createSchedule(startTime, endTime, durationMinutes); // Crea horarios de startTime a endTime en pasos de durationMinutes minutos
 
     useEffect(() => {
         const loadDisponibilidad = async () => {
@@ -31,7 +36,8 @@ export const Disponibilidad = () => {
             // Cargar disponibilidad existente para el semestre
             try {
                 const data = await getDisponibilidadDocente(decodedToken.user_id);
-                setDisponibilidad(data || {});
+                const schedule = procesoDisponibilidad(data);
+                setDisponibilidad(schedule || {});
             } catch (err) {
                 console.error("Error cargando disponibilidad:", err);
             }
@@ -39,8 +45,8 @@ export const Disponibilidad = () => {
         loadDisponibilidad();
     }, []);
 
-    const handleCheckboxChange = (dia, hora) => {
-        const key = `${dia}-${hora}`;
+    const handleCheckboxChange = (dia, horainicio, horafin) => {
+        const key = `${dia}-${horainicio} a ${horafin}`;
         setDisponibilidad(prev => ({
             ...prev,
             [key]: !prev[key]
@@ -83,24 +89,26 @@ export const Disponibilidad = () => {
                     <table className="w-full table-auto border-collapse">
                         <thead>
                             <tr>
-                                <th className="border border-neutral-200 px-4 py-2 text-left text-sm font-medium text-neutral-700">Hora</th>
+                                <th className="border border-neutral-200 px-4 py-2 text-left text-sm font-medium text-neutral-700">Hora inicio</th>
+                                <th className="border border-neutral-200 px-4 py-2 text-left text-sm font-medium text-neutral-700">Hora fin</th>
                                 {dias.map(dia => (
                                     <th key={dia} className="border border-neutral-200 px-4 py-2 text-center text-sm font-medium text-neutral-700">{dia}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {horas.map(hora => (
+                            {scheduleStart.map((hora, index) => (
                                 <tr key={hora}>
                                     <td className="border border-neutral-200 px-4 py-2 text-sm text-neutral-700 font-medium">{hora}</td>
+                                    <td className="border border-neutral-200 px-4 py-2 text-sm text-neutral-700 font-medium">{scheduleEnd[index]}</td>
                                     {dias.map(dia => {
-                                        const key = `${dia}-${hora}`;
+                                        const key = `${dia}-${hora} a ${scheduleEnd[index]}`;
                                         return (
                                             <td key={key} className="border border-neutral-200 px-4 py-2 text-center">
                                                 <input
                                                     type="checkbox"
                                                     checked={disponibilidad[key] || false}
-                                                    onChange={() => handleCheckboxChange(dia, hora)}
+                                                    onChange={() => handleCheckboxChange(dia, hora, scheduleEnd[index])}
                                                     className="w-4 h-4 text-neutral-900 bg-neutral-50 border-neutral-200 rounded focus:ring-neutral-900"
                                                 />
                                             </td>
