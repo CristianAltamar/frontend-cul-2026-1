@@ -1,65 +1,110 @@
 
 import { useState, useEffect } from "react";
-import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
+import { useNavigate } from "react-router-dom";
+import { getDisponibilidadDocente, saveDisponibilidad } from "../services/disponibilidadService.js";
 import { decodeToken } from "../utils/decodeToken.js";
 import { createSchedule, procesoDisponibilidad } from "../utils/schedule.js";
+import { useDisponibilidad } from "../hooks/useDisponibilidad.js";
+import { getPeriodos } from "../services/periodoService.js";
+import { use } from "react";
 
 const startTime = "08:00";
 const endTime = "22:00:00";
 const durationMinutes = 45;
 
 export const Disponibilidad = () => {
-    const [semestre, setSemestre] = useState("2024-1");
+    const [semestre, setSemestre] = useState();
     const [disponibilidad, setDisponibilidad] = useState({});
+    const navigate = useNavigate();
+    const { buildDisponibilidadPayload } = useDisponibilidad();
+    const [periodos, setPeriodos] = useState([]);
 
     const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const { scheduleStart, scheduleEnd } = createSchedule(startTime, endTime, durationMinutes); // Crea horarios de startTime a endTime en pasos de durationMinutes minutos
 
-    useEffect(() => {
-        const loadDisponibilidad = async () => {
-            // Verificar que el usuario tenga un token válido y el rol de docente
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.error("No token found");
-                navigate("/login");
-                return;
-            }
-    
-            const decodedToken = decodeToken(token);
-            if (!decodedToken) {
-                console.error("Invalid token");
-                localStorage.removeItem('token');
-                navigate("/login");
-                return;
-            }
+    const loadPeriodos = async () => {
+        try {
+            const data = await getPeriodos();
+            setSemestre(data.length > 0 ? data[0].id : null); // Selecciona el primer periodo por defecto
+            setPeriodos(data);
+        } catch (err) {
+            console.error("Error cargando periodos:", err);
+        }
+    };
 
-            // Cargar disponibilidad existente para el semestre
-            try {
-                const data = await getDisponibilidadDocente(decodedToken.user_id);
-                const schedule = procesoDisponibilidad(data);
-                setDisponibilidad(schedule || {});
-            } catch (err) {
-                console.error("Error cargando disponibilidad:", err);
-            }
-        };
-        loadDisponibilidad();
+    const loadDisponibilidad = async () => {
+        // Verificar que el usuario tenga un token válido y el rol de docente
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error("No token found");
+            navigate("/login");
+            return;
+        }
+
+        const decodedToken = decodeToken(token);
+        if (!decodedToken) {
+            console.error("Invalid token");
+            localStorage.removeItem('token');
+            navigate("/login");
+            return;
+        }
+
+        // Cargar disponibilidad existente para el semestre
+        try {
+            const data = await getDisponibilidadDocente(decodedToken.user_id, semestre);
+            const schedule = procesoDisponibilidad(data);
+            setDisponibilidad(schedule || {});
+        } catch (err) {
+            console.error("Error cargando disponibilidad:", err);
+        }
+    };
+    
+    useEffect(() => {
+        loadPeriodos();
     }, []);
+    
+    useEffect(() => {
+        loadDisponibilidad();
+    }, [semestre]);
+
 
     const handleCheckboxChange = (dia, horainicio, horafin) => {
-        const key = `${dia}-${horainicio} a ${horafin}`;
+        const key = `${dia}-${horainicio}-${horafin}`;
         setDisponibilidad(prev => ({
             ...prev,
             [key]: !prev[key]
         }));
-        console.log(disponibilidad)
     };
 
     const handleSave = async () => {
-        return; // Deshabilitado temporalmente
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Debe iniciar sesión para guardar disponibilidad.");
+            navigate('/login');
+            return;
+        }
+
+        const decodedToken = decodeToken(token);
+        if (!decodedToken) {
+            alert("Token inválido. Inicie sesión de nuevo.");
+            localStorage.removeItem('token');
+            navigate('/login');
+            return;
+        }
+        console.log("semestre:", semestre);
+        const payload = buildDisponibilidadPayload(disponibilidad, semestre, decodedToken);
+        if (payload.length === 0) {
+            alert("Selecciona al menos un horario antes de guardar.");
+            return;
+        }
+        console.log("Payload a enviar:", payload);
+
+
         try {
-            await saveDisponibilidad(semestre, disponibilidad);
+            await saveDisponibilidad(payload);
             alert("Disponibilidad guardada correctamente");
         } catch (err) {
+            console.error("Error guardando disponibilidad:", err);
             alert("Error guardando disponibilidad");
         }
     };
@@ -78,10 +123,9 @@ export const Disponibilidad = () => {
                         onChange={(e) => setSemestre(e.target.value)}
                         className="px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 text-sm"
                     >
-                        <option value="2024-1">2024-1</option>
-                        <option value="2024-2">2024-2</option>
-                        <option value="2025-1">2025-1</option>
-                        <option value="2025-2">2025-2</option>
+                        {periodos.map((periodo) => (
+                            <option key={periodo.id} value={periodo.id}>{periodo.nombre}</option>
+                        ))}
                     </select>
                 </div>
 
@@ -102,7 +146,7 @@ export const Disponibilidad = () => {
                                     <td className="border border-neutral-200 px-4 py-2 text-sm text-neutral-700 font-medium">{hora}</td>
                                     <td className="border border-neutral-200 px-4 py-2 text-sm text-neutral-700 font-medium">{scheduleEnd[index]}</td>
                                     {dias.map(dia => {
-                                        const key = `${dia}-${hora} a ${scheduleEnd[index]}`;
+                                        const key = `${dia}-${hora}-${scheduleEnd[index]}`;
                                         return (
                                             <td key={key} className="border border-neutral-200 px-4 py-2 text-center">
                                                 <input
