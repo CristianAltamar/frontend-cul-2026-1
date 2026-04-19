@@ -3,6 +3,8 @@ import { getHorarioDocente } from "../services/horarioService.js";
 import { decodeToken } from "../utils/decodeToken.js";
 import { useNavigate  } from "react-router-dom";
 
+const DIAS = { 1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes", 6: "Sábado", 7: "Domingo" };
+
 export function Horario(){
     const [horario,setHorario] = useState([]);
     const navigate = useNavigate();
@@ -11,25 +13,22 @@ export function Horario(){
         const cargarHorario = async ()=>{
             const token = localStorage.getItem('token');
             if (!token) {
-                console.error("No token found");
                 navigate("/login");
                 return;
             }
             const d = decodeToken(token);
             if (!d) {
-                console.error("Invalid token");
                 localStorage.removeItem('token');
                 navigate("/login");
                 return;
             }
-            if (d.rol !== 2) {
-                console.error("Unauthorized access");
-                localStorage.removeItem('token');
-                navigate("/login");
-                return;
+            try {
+                const data = await getHorarioDocente(d.user_id);
+                setHorario(data.resultado ?? []);
+            } catch (err) {
+                console.error("Error cargando horario:", err);
+                setHorario([]);
             }
-            const data = await getHorarioDocente(d.user_id);
-            setHorario(data.resultado);
         }
         cargarHorario();
     },[])
@@ -48,21 +47,27 @@ export function Horario(){
                             <thead className="bg-neutral-50 border-b border-neutral-100 text-neutral-600 font-medium">
                             <tr>
                                 <th className="px-6 py-4">Día</th>
-                                <th className="px-6 py-4">Hora de Inicio</th>
-                                <th className="px-6 py-4 text-right">Hora de Fin</th>
+                                <th className="px-6 py-4">Hora inicio</th>
+                                <th className="px-6 py-4">Hora fin</th>
+                                <th className="px-6 py-4">Grupo</th>
+                                <th className="px-6 py-4">Salón</th>
+                                <th className="px-6 py-4">Jornada</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100 text-neutral-800">
                             {horario.map(h => (
-                                <tr key={h.id_horario} className="hover:bg-neutral-50/50 transition-colors">
-                                    <td className="px-6 py-4 font-semibold capitalize">{h.dia}</td>
-                                    <td className="px-6 py-4 font-medium text-neutral-600">{h.hora_inicio}</td>
-                                    <td className="px-6 py-4 text-right font-medium text-neutral-600">{h.hora_fin}</td>
+                                <tr key={h.id} className="hover:bg-neutral-50/50 transition-colors">
+                                    <td className="px-6 py-4 font-semibold">{DIAS[h.dia_semana] ?? h.dia_semana}</td>
+                                    <td className="px-6 py-4 text-neutral-600">{h.hora_inicio}</td>
+                                    <td className="px-6 py-4 text-neutral-600">{h.hora_fin}</td>
+                                    <td className="px-6 py-4 text-neutral-600">{h.codigo_grupo}</td>
+                                    <td className="px-6 py-4 text-neutral-600">{h.codigo_salon}</td>
+                                    <td className="px-6 py-4 text-neutral-600">{h.jornada}</td>
                                 </tr>
                             ))}
                             {horario.length === 0 && (
                                 <tr>
-                                    <td colSpan="3" className="px-6 py-12 text-center text-neutral-500 italic">No hay horarios asignados por el momento.</td>
+                                    <td colSpan="6" className="px-6 py-12 text-center text-neutral-500 italic">No hay horarios asignados por el momento.</td>
                                 </tr>
                             )}
                             </tbody>
