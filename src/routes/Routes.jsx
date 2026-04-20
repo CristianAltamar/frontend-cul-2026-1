@@ -16,10 +16,10 @@ export function AppRoutes() {
                 {/* Páginas sin navbar */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/" element={<Home />} />
 
                 {/* Páginas con navbar */}
                 <Route element={<Layout />}>
-                    <Route path="/" element={<Home />} />
                     <Route path="/docente" element={<Docente />} />
                     <Route path="/disponibilidad" element={<Disponibilidad />} />
                     <Route path="/horario" element={<Horario />} />
