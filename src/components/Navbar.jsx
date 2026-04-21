@@ -12,10 +12,9 @@ const adminLinks = [
     { to: "/admin", label: "Administración" },
     { to: "/admin/docentes", label: "Docentes" },
     { to: "/admin/horario", label: "Horario" },
-    { to: "/admin/grupo", label: "Grupo" },
-    { to: "/admin/periodo", label: "Periodos" },
-    { to: "/admin/jornadas", label: "Jornadas" },
-    { to: "/admin/asignaturas", label: "Asignaturas" },
+
+    
+    
 ];
 
 export function Navbar() {
