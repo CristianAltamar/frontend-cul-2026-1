@@ -304,13 +304,13 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                                                     className="px-2 py-1.5 border-r border-neutral-50 last:border-r-0 cursor-pointer hover:bg-neutral-50/80 transition-colors align-top"
                                                 >
                                                     {asig ? (
-                                                        <div className="bg-neutral-900 text-white rounded-lg px-2.5 py-2 space-y-0.5 min-h- [44px]">
+                                                        <div className="bg-neutral-900 text-white rounded-lg px-2.5 py-2 space-y-0.5 min-h-[44px]">
                                                             <p className="text-xs font-medium leading-tight">{asig_?.nombre ?? "—"}</p>
                                                             <p className="text-[10px] text-neutral-400">{doc?.nombre ?? "—"}</p>
                                                             {asig.aula && <p className="text-[10px] text-neutral-500">Aula {asig.aula}</p>}
                                                         </div>
                                                     ) : (
-                                                        <div className="min-h- [44px] rounded-lg border border-dashed border-neutral-150 flex items-center justify-center hover:border-neutral-300 transition-colors">
+                                                        <div className="min-h-[44px] rounded-lg border border-dashed border-neutral-150 flex items-center justify-center hover:border-neutral-300 transition-colors">
                                                             <span className="text-neutral-250 text-xs">+</span>
                                                         </div>
                                                     )}
