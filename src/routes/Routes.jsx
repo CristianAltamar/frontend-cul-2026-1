@@ -8,6 +8,7 @@ import { AdminPanel } from "../pages/Admin.jsx";
 import { AdminDocentes } from "../pages/AdminDocentes.jsx";
 import { Docente } from "../pages/Docente.jsx";
 import { Disponibilidad } from "../pages/Disponibilidad.jsx";
+import { AdminHorario } from "../pages/AdminHorario.jsx";
 
 export function AppRoutes() {
     return (
@@ -25,6 +26,7 @@ export function AppRoutes() {
                     <Route path="/horario" element={<Horario />} />
                     <Route path="/admin" element={<AdminPanel />} />
                     <Route path="/admin/docentes" element={<AdminDocentes />} />
+                    <Route path="/admin/horario" element={<AdminHorario />} />
                 </Route>
             </Routes>
         </BrowserRouter>
