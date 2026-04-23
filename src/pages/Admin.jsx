@@ -87,15 +87,19 @@ export function AdminPanel() {
 
                     <Link to="/admin/docentes" className="group block h-full">
                         <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
-                            <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Docentes</h3>
+                            <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Usuarios</h3>
                             <p className="mt-2 text-sm text-neutral-500">Ver todos los usuarios registrados</p>
                         </div>
                     </Link>
 
-                    <div className="group block h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer opacity-50 select-none">
-                        <h3 className="text-lg font-medium text-neutral-800">Salones</h3>
-                        <p className="mt-2 text-sm text-neutral-500">Aulas y recursos físicos</p>
-                    </div>
+                    <Link to="/admin/horario" className="group block h-full">
+                        <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
+                            <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Horario</h3>
+                            <p className="mt-2 text-sm text-neutral-500">Gestionar el horario académico</p>
+                        </div>
+                    </Link>
+
+            
                 </div>
 
                 {/* Formulario crear usuario */}

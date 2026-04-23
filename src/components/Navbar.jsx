@@ -10,7 +10,7 @@ const docenteLinks = [
 
 const adminLinks = [
     { to: "/admin", label: "Administración", end: true},
-    { to: "/admin/docentes", label: "Docentes" },
+    { to: "/admin/docentes", label: "Usuarios" },
     { to: "/admin/horario", label: "Horario" },
 
     
