@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
+import { getFacultades } from "../services/facultadService.js";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -603,7 +604,7 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
 function TabGrupos({ facultades, setFacultades, programas, setProgramas, grupos, setGrupos }) {
     // ── Estado Facultades ────────────────────────────────────────────────────
     const [showFacForm, setShowFacForm] = useState(false);
-    const [facForm,     setFacForm]     = useState({ nombre: "", codigo: "" });
+    const [facForm,     setFacForm]     = useState({ nombre: "" });
     const [editFacId,   setEditFacId]   = useState(null);
     const [selectedFac, setSelectedFac] = useState(null);
 
@@ -1372,7 +1373,7 @@ export function AdminHorario() {
     const [activeTab, setActiveTab] = useState("horario");
 
     // TODO: Reemplazar estado inicial con datos cargados desde la API
-    const [facultades,   setFacultades]   = useState(INIT_FACULTADES);
+    const [facultades,   setFacultades]   = useState([]);
     const [programas,    setProgramas]    = useState(INIT_PROGRAMAS);
     const [periodos,     setPeriodos]     = useState(INIT_PERIODOS);
     const [jornadas,     setJornadas]     = useState(INIT_JORNADAS);
@@ -1390,17 +1391,17 @@ export function AdminHorario() {
         const decoded = decodeToken(token);
         if (!decoded || decoded.rol !== 1) { navigate("/login"); return; }
 
-        // TODO: Cargar datos al montar el componente
-        // Promise.all([
-        //   fetchFacultades().then(setFacultades),
-        //   fetchProgramas().then(setProgramas),
-        //   fetchPeriodos().then(setPeriodos),
-        //   fetchJornadas().then(setJornadas),
-        //   fetchAsignaturas().then(setAsignaturas),
-        //   fetchDocentes().then(setDocentes),
-        //   fetchGrupos().then(setGrupos),
-        //   fetchAsignaciones().then(setAsignaciones),
-        // ]).catch(console.error);
+        const loadData = async () => {
+            try {
+                const f = await getFacultades();
+                setFacultades(f);
+            } catch (error) {
+                console.error("Error al cargar las facultades:", error);
+            }
+        };
+
+        loadData();
+
     }, []);
 
     return (
