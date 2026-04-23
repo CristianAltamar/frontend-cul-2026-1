@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
+import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -377,7 +378,10 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                                 )}
                             </h2>
                             {loadingDisp && (
-                                <p className="text-xs text-neutral-400 mt-0.5 animate-pulse">Cargando disponibilidad…</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <LoadingSpinner size="sm" />
+                                    <p className="text-xs text-neutral-400">Cargando disponibilidad…</p>
+                                </div>
                             )}
                             {!loadingDisp && !dispDocente.length && (
                                 <p className="text-xs text-amber-600 mt-0.5">

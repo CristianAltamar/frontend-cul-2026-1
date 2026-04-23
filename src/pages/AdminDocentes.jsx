@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { getDocentes } from "../services/userService.js";
+import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 
 const ROLES = { 1: "Administrador", 2: "Docente" };
 
 export function AdminDocentes() {
-    const navigate = useNavigate();
+    const navigate  = useNavigate();
     const [docentes, setDocentes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -22,7 +23,7 @@ export function AdminDocentes() {
                 const data = await getDocentes();
                 setDocentes(data);
             } catch {
-                setError("No se pudieron cargar los docentes.");
+                setError("No se pudieron cargar los usuarios.");
             } finally {
                 setLoading(false);
             }
@@ -34,21 +35,16 @@ export function AdminDocentes() {
         <div className="min-h-screen bg-neutral-50 px-6 py-12 font-sans">
             <div className="max-w-5xl mx-auto space-y-8">
 
-                <div className="flex items-center gap-4 border-b border-neutral-200 pb-5">
-                    <button
-                        onClick={() => navigate("/admin")}
-                        className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
-                    >
-                        ← Volver
-                    </button>
-                    <div>
-                        <h1 className="text-3xl font-semibold text-neutral-800 tracking-tight">Docentes</h1>
-                        <p className="mt-1 text-sm text-neutral-500">Usuarios registrados en el sistema</p>
-                    </div>
+                <div className="border-b border-neutral-200 pb-5">
+                    <h1 className="text-3xl font-semibold text-neutral-800 tracking-tight">Usuarios</h1>
+                    <p className="mt-1 text-sm text-neutral-500">Usuarios registrados en el sistema</p>
                 </div>
 
                 {loading && (
-                    <p className="text-sm text-neutral-500">Cargando...</p>
+                    <div className="flex items-center gap-3 py-6 text-sm text-neutral-500">
+                        <LoadingSpinner size="md" />
+                        <span>Cargando usuarios…</span>
+                    </div>
                 )}
 
                 {error && (
@@ -106,7 +102,7 @@ export function AdminDocentes() {
                                     {docentes.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="px-6 py-12 text-center text-neutral-500 italic">
-                                                No hay docentes registrados.
+                                                No hay usuarios registrados.
                                             </td>
                                         </tr>
                                     )}

@@ -6,6 +6,7 @@ import { Home } from "../pages/Home.jsx";
 import { Horario } from "../pages/Horario.jsx";
 import { AdminPanel } from "../pages/Admin.jsx";
 import { AdminDocentes } from "../pages/AdminDocentes.jsx";
+import { AdminCrearDocente } from "../pages/AdminCrearDocente.jsx";
 import { Docente } from "../pages/Docente.jsx";
 import { Disponibilidad } from "../pages/Disponibilidad.jsx";
 import { AdminHorario } from "../pages/AdminHorario.jsx";
@@ -15,18 +16,19 @@ export function AppRoutes() {
         <BrowserRouter>
             <Routes>
                 {/* Páginas sin navbar */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/" element={<Home />} />
+                <Route path="/login"    element={<Login />}     />
+                <Route path="/register" element={<Register />}  />
+                <Route path="/"         element={<Home />}       />
+                <Route path="/admin"    element={<AdminPanel />} />
+                <Route path="/docente"  element={<Docente />}    />
 
                 {/* Páginas con navbar */}
                 <Route element={<Layout />}>
-                    <Route path="/docente" element={<Docente />} />
-                    <Route path="/disponibilidad" element={<Disponibilidad />} />
-                    <Route path="/horario" element={<Horario />} />
-                    <Route path="/admin" element={<AdminPanel />} />
-                    <Route path="/admin/docentes" element={<AdminDocentes />} />
-                    <Route path="/admin/horario" element={<AdminHorario />} />
+                    <Route path="/disponibilidad"      element={<Disponibilidad />}    />
+                    <Route path="/horario"              element={<Horario />}           />
+                    <Route path="/admin/crear-usuario"  element={<AdminCrearDocente />} />
+                    <Route path="/admin/docentes"       element={<AdminDocentes />}     />
+                    <Route path="/admin/horario"        element={<AdminHorario />}      />
                 </Route>
             </Routes>
         </BrowserRouter>
