@@ -3,17 +3,16 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 
 const docenteLinks = [
-    { to: "/docente", label: "Panel" },
+    { to: "/docente", label: "Panel", end: true },
     { to: "/disponibilidad", label: "Disponibilidad" },
     { to: "/horario", label: "Horario" },
 ];
 
 const adminLinks = [
-    { to: "/admin", label: "Administración" },
+    { to: "/admin", label: "Administración", end: true},
     { to: "/admin/docentes", label: "Docentes" },
     { to: "/admin/horario", label: "Horario" },
 
-    
     
 ];
 
@@ -52,7 +51,7 @@ export function Navbar() {
                         <NavLink
                             key={link.to}
                             to={link.to}
-                            end={link.exact}
+                            end={link.end}
                             className={navLinkClass}
                         >
                             {link.label}
@@ -89,7 +88,7 @@ export function Navbar() {
                         <NavLink
                             key={link.to}
                             to={link.to}
-                            end={link.exact}
+                            end={link.end}
                             className={navLinkClass}
                             onClick={() => setMenuOpen(false)}
                         >

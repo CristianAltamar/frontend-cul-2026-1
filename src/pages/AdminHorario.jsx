@@ -65,12 +65,67 @@ const INIT_ASIGNATURAS = [
     { id: 6, nombre: "Anatomía",          codigo: "ANA101", creditos: 4, programa_id: 5 },
 ];
 
+// TODO: Cargar desde GET /get_grupos?programa_id={id}
+// Estructura esperada: [{ id, nombre, semestre, programa_id, cupo }]
+// "Grupo" = conjunto de estudiantes de un semestre específico dentro de un programa
+const INIT_GRUPOS = [
+    // Ingeniería de Sistemas
+    { id: 1, nombre: "Grupo 01", semestre: 1, programa_id: 1, cupo: 35 },
+    { id: 2, nombre: "Grupo 02", semestre: 1, programa_id: 1, cupo: 35 },
+    { id: 3, nombre: "Grupo 01", semestre: 2, programa_id: 1, cupo: 30 },
+    { id: 4, nombre: "Grupo 01", semestre: 3, programa_id: 1, cupo: 28 },
+    // Ingeniería Civil
+    { id: 5, nombre: "Grupo 01", semestre: 1, programa_id: 2, cupo: 32 },
+    { id: 6, nombre: "Grupo 01", semestre: 2, programa_id: 2, cupo: 29 },
+    // Administración de Empresas
+    { id: 7, nombre: "Grupo 01", semestre: 1, programa_id: 3, cupo: 40 },
+    { id: 8, nombre: "Grupo 02", semestre: 1, programa_id: 3, cupo: 38 },
+    // Enfermería
+    { id: 9, nombre: "Grupo 01", semestre: 1, programa_id: 5, cupo: 25 },
+];
+
 // TODO: Cargar desde GET /get_docentes (filtrado por rol=2)
 const INIT_DOCENTES = [
     { id: 1, nombre: "Carlos Pérez"    },
     { id: 2, nombre: "Ana González"    },
     { id: 3, nombre: "Luis Martínez"   },
     { id: 4, nombre: "María Rodríguez" },
+];
+
+// ── Disponibilidades de prueba ────────────────────────────────────────────────
+// TODO: Eliminar este mock cuando el backend esté activo.
+//       Reemplazar con GET /get_disponibilidad_docente/{docente_id}?periodo_id={periodo_id}
+//       Estructura que debe devolver el backend:
+//         [{ id, id_docente, dia_semana (1=Lun…6=Sáb), hora_inicio "HH:MM", hora_fin "HH:MM", id_periodo }]
+// Disponibilidad por BLOQUE HORARIO: un docente puede ir todos los días
+// pero solo tiene ciertas horas disponibles dentro de cada día.
+// La lógica de isDisponible() verifica solapamiento de rangos — no día completo.
+// TODO: Eliminar este mock cuando el backend esté activo.
+//       Reemplazar con GET /get_disponibilidad_docente/{docente_id}?periodo_id={periodo_id}
+const INIT_DISPONIBILIDADES = [
+    // ── Carlos Pérez — disponible horas parciales por día (diurna) ──────────
+    { id: 1,  id_docente: 1, dia_semana: 1, hora_inicio: "07:00", hora_fin: "09:00", id_periodo: 1 }, // Lunes solo primeras 2h
+    { id: 2,  id_docente: 1, dia_semana: 2, hora_inicio: "10:00", hora_fin: "13:00", id_periodo: 1 }, // Martes últimas 3h
+    { id: 3,  id_docente: 1, dia_semana: 3, hora_inicio: "07:00", hora_fin: "11:00", id_periodo: 1 }, // Miércoles primeras 4h
+    { id: 4,  id_docente: 1, dia_semana: 5, hora_inicio: "07:00", hora_fin: "13:00", id_periodo: 1 }, // Viernes día completo diurno
+
+    // ── Ana González — disponible vespertina, horas parciales ───────────────
+    { id: 5,  id_docente: 2, dia_semana: 1, hora_inicio: "13:00", hora_fin: "16:00", id_periodo: 1 }, // Lunes 3h vespertinas
+    { id: 6,  id_docente: 2, dia_semana: 2, hora_inicio: "14:00", hora_fin: "19:00", id_periodo: 1 }, // Martes desde las 14h
+    { id: 7,  id_docente: 2, dia_semana: 4, hora_inicio: "13:00", hora_fin: "17:00", id_periodo: 1 }, // Jueves 4h
+    { id: 8,  id_docente: 2, dia_semana: 6, hora_inicio: "13:00", hora_fin: "15:00", id_periodo: 1 }, // Sábado solo 2h
+
+    // ── Luis Martínez — amplia disponibilidad, pero no todos los días ───────
+    { id: 9,  id_docente: 3, dia_semana: 1, hora_inicio: "07:00", hora_fin: "19:00", id_periodo: 1 }, // Lunes diurna+vespertina
+    { id: 10, id_docente: 3, dia_semana: 2, hora_inicio: "07:00", hora_fin: "13:00", id_periodo: 1 }, // Martes solo diurna
+    { id: 11, id_docente: 3, dia_semana: 3, hora_inicio: "07:00", hora_fin: "19:00", id_periodo: 1 }, // Miércoles diurna+vespertina
+    { id: 12, id_docente: 3, dia_semana: 5, hora_inicio: "13:00", hora_fin: "19:00", id_periodo: 1 }, // Viernes solo vespertina
+
+    // ── María Rodríguez — nocturna con horas parciales ───────────────────────
+    { id: 13, id_docente: 4, dia_semana: 1, hora_inicio: "18:00", hora_fin: "22:00", id_periodo: 1 }, // Lunes nocturna completa
+    { id: 14, id_docente: 4, dia_semana: 3, hora_inicio: "18:00", hora_fin: "20:00", id_periodo: 1 }, // Miércoles solo 2h nocturnas
+    { id: 15, id_docente: 4, dia_semana: 4, hora_inicio: "18:00", hora_fin: "22:00", id_periodo: 1 }, // Jueves nocturna completa
+    { id: 16, id_docente: 4, dia_semana: 5, hora_inicio: "19:00", hora_fin: "22:00", id_periodo: 1 }, // Viernes desde las 19h
 ];
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
@@ -93,16 +148,17 @@ const newId = () => ++_nextId;
 // ═════════════════════════════════════════════════════════════════════════════
 // TAB: PROGRAMACIÓN — grilla semanal de horarios
 // ═════════════════════════════════════════════════════════════════════════════
-function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, asignaciones, setAsignaciones }) {
+function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, grupos, asignaciones, setAsignaciones }) {
     const [modal, setModal]   = useState(null);
-    const [form,  setForm]    = useState({ docente_id: "", asignatura_id: "", aula: "", _id: null });
+    const [form,  setForm]    = useState({ asignatura_id: "", grupo_id: "", aula: "", _id: null });
     const [saving, setSaving] = useState(false);
 
-    // ── Disponibilidad del docente seleccionado en el modal ───────────────────
-    // TODO: dispDocente se carga desde GET /get_disponibilidad_docente/{id}?periodo_id={id}
+    // ── Disponibilidad del docente seleccionado en los filtros ────────────────
+    // Se carga al seleccionar un docente en "Filtrar vista" (no en el modal).
+    // TODO: conectar con GET /get_disponibilidad_docente/{docente_id}?periodo_id={periodo_id}
     // Estructura esperada: [{ id, id_docente, dia_semana, hora_inicio, hora_fin, id_periodo, ... }]
-    const [dispDocente,  setDispDocente]  = useState([]);
-    const [loadingDisp,  setLoadingDisp]  = useState(false);
+    const [dispDocente, setDispDocente] = useState([]);
+    const [loadingDisp, setLoadingDisp] = useState(false);
 
     // Convierte "HH:MM" o "HH:MM:SS" a minutos totales
     const toMin = t => { const p = t.split(":"); return parseInt(p[0]) * 60 + parseInt(p[1] || 0); };
@@ -110,8 +166,7 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
     // Mapeo nombre de día → número (igual que en schedule.js / useDisponibilidad.js)
     const DIA_NUM = { Lunes: 1, Martes: 2, "Miércoles": 3, Jueves: 4, Viernes: 5, Sábado: 6 };
 
-    // Verifica si el docente tiene disponibilidad que solape con el bloque dado
-    // Retorna: true = disponible · false = no disponible · null = sin datos
+    // true = docente disponible en ese bloque · false = no disponible · null = sin datos
     const isDisponible = (dia, horaInicio, horaFin) => {
         if (!dispDocente.length) return null;
         const diaNum = DIA_NUM[dia];
@@ -124,61 +179,96 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
         );
     };
 
-    // Carga la disponibilidad del docente cada vez que cambia docente_id o periodo_id
-    // TODO: cuando el backend esté disponible este effect ya está listo para producción
+    // true = docente tiene al menos un bloque registrado ese día (para colorear el encabezado)
+    const isDiaDisponible = (dia) => {
+        if (!dispDocente.length) return null;
+        return dispDocente.some(s => s.dia_semana === DIA_NUM[dia]);
+    };
+
+    // Carga disponibilidad cuando el docente o el periodo cambian en los filtros.
+    // ─── MOCK activo: filtra INIT_DISPONIBILIDADES localmente ───────────────
+    // TODO: cuando el backend esté listo, reemplazar el bloque del mock por:
+    //   getDisponibilidadDocente(parseInt(filtro.docente_id), parseInt(filtro.periodo_id))
+    //     .then(data => setDispDocente(Array.isArray(data) ? data : []))
+    //     .catch(() => setDispDocente([]))
+    //     .finally(() => setLoadingDisp(false));
+    // La función getDisponibilidadDocente ya está importada en la línea 4 y lista para usar.
+    // ─────────────────────────────────────────────────────────────────────────
     useEffect(() => {
-        if (!form.docente_id || !filtro.periodo_id) {
+        if (!filtro.docente_id || !filtro.periodo_id) {
             setDispDocente([]);
             return;
         }
         setLoadingDisp(true);
-        getDisponibilidadDocente(parseInt(form.docente_id), parseInt(filtro.periodo_id))
-            .then(data => setDispDocente(Array.isArray(data) ? data : []))
-            .catch(() => setDispDocente([]))
-            .finally(() => setLoadingDisp(false));
-    }, [form.docente_id, filtro.periodo_id]);
+        // MOCK — simula latencia de red para probar el estado "Cargando…"
+        const timer = setTimeout(() => {
+            const mock = INIT_DISPONIBILIDADES.filter(
+                d => d.id_docente === parseInt(filtro.docente_id) &&
+                     d.id_periodo  === parseInt(filtro.periodo_id)
+            );
+            // Normaliza el campo a dia_semana para que isDisponible funcione igual con datos reales
+            setDispDocente(mock);
+            setLoadingDisp(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [filtro.docente_id, filtro.periodo_id]);
 
-    const jornadaActual = jornadas.find(j => j.id === parseInt(filtro.jornada_id));
-    const timeSlots     = jornadaActual ? generateTimeSlots(jornadaActual.hora_inicio, jornadaActual.hora_fin) : [];
+    const jornadaActual      = jornadas.find(j => j.id === parseInt(filtro.jornada_id));
+    const docenteActual      = docentes.find(d => d.id === parseInt(filtro.docente_id));
+    const timeSlots          = jornadaActual ? generateTimeSlots(jornadaActual.hora_inicio, jornadaActual.hora_fin) : [];
 
+    // Asignaturas filtradas por programa (opcional); si no hay programa muestra todas
     const asignaturasFiltradas = filtro.programa_id
         ? asignaturas.filter(a => a.programa_id === parseInt(filtro.programa_id))
         : asignaturas;
 
+    // Grupos filtrados por programa del filtro; si no hay programa muestra todos
+    // TODO: GET /get_grupos?programa_id={filtro.programa_id}
+    const gruposFiltrados = filtro.programa_id
+        ? grupos.filter(g => g.programa_id === parseInt(filtro.programa_id))
+        : grupos;
+
+    // Devuelve la asignación de CUALQUIER docente para ese periodo, jornada, día y hora.
+    // No filtra por docente_id para que las clases asignadas persistan al cambiar de docente en el filtro.
+    // TODO: cuando se conecte el backend, este mismo criterio aplica al query de asignaciones
+    //   GET /get_asignaciones_horario?periodo_id={id}&jornada_id={id}
     const getAsignacion = (dia, hora) =>
         asignaciones.find(a =>
-            a.dia          === dia &&
-            a.hora_inicio  === hora &&
-            a.periodo_id   === parseInt(filtro.periodo_id) &&
-            a.jornada_id   === parseInt(filtro.jornada_id) &&
-            a.programa_id  === parseInt(filtro.programa_id)
+            a.dia         === dia &&
+            a.hora_inicio === hora &&
+            a.periodo_id  === parseInt(filtro.periodo_id) &&
+            a.jornada_id  === parseInt(filtro.jornada_id)
         );
 
+    // La grilla se activa con periodo + jornada + docente; programa es opcional
+    const filtersReady = filtro.periodo_id && filtro.jornada_id && filtro.docente_id;
+
     const openModal = (dia, slot) => {
-        if (!filtro.periodo_id || !filtro.jornada_id || !filtro.programa_id) return;
+        if (!filtersReady) return;
         const existing = getAsignacion(dia, slot.inicio);
-        setDispDocente([]); // limpia disponibilidad previa al abrir
         setForm(existing
-            ? { docente_id: existing.docente_id, asignatura_id: existing.asignatura_id, aula: existing.aula, _id: existing.id }
-            : { docente_id: "", asignatura_id: "", aula: "", _id: null }
+            ? { asignatura_id: existing.asignatura_id, grupo_id: existing.grupo_id || "", aula: existing.aula, _id: existing.id }
+            : { asignatura_id: "", grupo_id: "", aula: "", _id: null }
         );
         setModal({ dia, ...slot });
     };
 
     const handleSave = async () => {
-        if (!form.docente_id || !form.asignatura_id) return;
+        if (!form.asignatura_id || !form.grupo_id) return;
         setSaving(true);
         try {
             // TODO: Enviar al backend
+            // docente_id viene del filtro; grupo_id y asignatura_id del formulario del modal.
             // const payload = {
             //     periodo_id:    parseInt(filtro.periodo_id),
             //     jornada_id:    parseInt(filtro.jornada_id),
-            //     programa_id:   parseInt(filtro.programa_id),
+            //     programa_id:   parseInt(filtro.programa_id) || null,
             //     dia:           modal.dia,
             //     hora_inicio:   modal.inicio,
             //     hora_fin:      modal.fin,
-            //     docente_id:    parseInt(form.docente_id),
+            //     docente_id:    parseInt(filtro.docente_id),
             //     asignatura_id: parseInt(form.asignatura_id),
+            //     grupo_id:      parseInt(form.grupo_id),
             //     aula:          form.aula,
             // };
             // form._id
@@ -186,18 +276,23 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
             //   : await axios.post("/crear_asignacion_horario", payload);
 
             if (form._id) {
-                setAsignaciones(prev => prev.map(a => a.id === form._id ? { ...a, ...form } : a));
+                setAsignaciones(prev => prev.map(a =>
+                    a.id === form._id
+                        ? { ...a, asignatura_id: parseInt(form.asignatura_id), grupo_id: parseInt(form.grupo_id), aula: form.aula }
+                        : a
+                ));
             } else {
                 setAsignaciones(prev => [...prev, {
-                    id: newId(),
+                    id:            newId(),
                     periodo_id:    parseInt(filtro.periodo_id),
                     jornada_id:    parseInt(filtro.jornada_id),
-                    programa_id:   parseInt(filtro.programa_id),
+                    programa_id:   parseInt(filtro.programa_id) || null,
                     dia:           modal.dia,
                     hora_inicio:   modal.inicio,
                     hora_fin:      modal.fin,
-                    docente_id:    parseInt(form.docente_id),
+                    docente_id:    parseInt(filtro.docente_id),
                     asignatura_id: parseInt(form.asignatura_id),
+                    grupo_id:      parseInt(form.grupo_id),
                     aula:          form.aula,
                 }]);
             }
@@ -213,14 +308,16 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
         setModal(null);
     };
 
-    const filtersReady = filtro.periodo_id && filtro.jornada_id && filtro.programa_id;
-
     return (
         <div className="space-y-5">
+
             {/* ── Filtros ── */}
             <div className={`${cx.card} p-5`}>
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">Filtrar vista</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                {/* Responsive: 1 col móvil · 2 cols tablet · 4 cols escritorio */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
                     <div>
                         <label className={cx.label}>Periodo / Semestre</label>
                         {/* TODO: options desde GET /get_periodos */}
@@ -230,6 +327,7 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                             {periodos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
                     </div>
+
                     <div>
                         <label className={cx.label}>Jornada</label>
                         {/* TODO: options desde GET /get_jornadas */}
@@ -241,48 +339,126 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                             ))}
                         </select>
                     </div>
+
+                    <div>
+                        <label className={cx.label}>Docente</label>
+                        {/* TODO: options desde GET /get_docentes?rol=2
+                            Estructura esperada: [{ id, nombre }]
+                            Al seleccionar se carga su disponibilidad y se activa la grilla */}
+                        <select className={cx.input} value={filtro.docente_id}
+                            onChange={e => setFiltro(f => ({ ...f, docente_id: e.target.value }))}>
+                            <option value="">Selecciona docente</option>
+                            {docentes.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                        </select>
+                    </div>
+
                     <div>
                         <label className={cx.label}>Programa académico</label>
-                        {/* TODO: options desde GET /get_programas */}
+                        {/* TODO: options desde GET /get_programas
+                            Filtra las asignaturas disponibles al asignar en la grilla (opcional) */}
                         <select className={cx.input} value={filtro.programa_id}
                             onChange={e => setFiltro(f => ({ ...f, programa_id: e.target.value }))}>
-                            <option value="">Selecciona programa</option>
+                            <option value="">Todos los programas</option>
                             {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
                     </div>
+
                 </div>
             </div>
 
             {/* ── Grilla ── */}
             {!filtersReady ? (
-                <div className={`${cx.card} py-16 flex flex-col items-center justify-center gap-2`}>
+                <div className={`${cx.card} py-16 flex flex-col items-center justify-center gap-2 px-4 text-center`}>
                     <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-400 text-lg">◫</div>
-                    <p className="text-sm text-neutral-400">Selecciona periodo, jornada y programa para ver la grilla</p>
+                    <p className="text-sm text-neutral-400">Selecciona periodo, jornada y docente para ver su disponibilidad</p>
                 </div>
             ) : (
                 <div className={`${cx.card} overflow-hidden`}>
-                    <div className="px-5 py-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                            <h2 className="text-sm font-semibold text-neutral-800">
+
+                    {/* Encabezado de la grilla */}
+                    <div className="px-5 py-4 border-b border-neutral-100 flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            {/* Encabezado: muestra periodo y jornada (el docente aparece dentro de las celdas) */}
+                            <h2 className="text-sm font-semibold text-neutral-800 truncate">
                                 {periodos.find(p => p.id === parseInt(filtro.periodo_id))?.nombre}
                                 <span className="mx-1.5 text-neutral-300">·</span>
                                 {jornadaActual?.nombre}
-                                <span className="mx-1.5 text-neutral-300">·</span>
-                                {programas.find(p => p.id === parseInt(filtro.programa_id))?.nombre}
+                                {filtro.programa_id && (
+                                    <>
+                                        <span className="mx-1.5 text-neutral-300">·</span>
+                                        {programas.find(p => p.id === parseInt(filtro.programa_id))?.nombre}
+                                    </>
+                                )}
                             </h2>
+                            {/* Estado de carga de disponibilidad */}
+                            {loadingDisp && (
+                                <p className="text-xs text-neutral-400 mt-0.5 animate-pulse">Cargando disponibilidad…</p>
+                            )}
+                            {/* Aviso si el docente no registró disponibilidad
+                                TODO: remover cuando la disponibilidad sea obligatoria en el perfil del docente */}
+                            {!loadingDisp && !dispDocente.length && (
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                    Este docente no tiene disponibilidad registrada para este periodo.
+                                </p>
+                            )}
                         </div>
-                        <span className="text-xs text-neutral-400">Clic en celda vacía para asignar</span>
+
+                        {/* Leyenda + docente cuya disponibilidad se está mostrando */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            {/* TODO: docenteActual viene de INIT_DOCENTES; reemplazar con datos de GET /get_docentes */}
+                            {docenteActual && (
+                                <span className="text-xs text-neutral-500">
+                                    Disponibilidad de: <strong className="text-neutral-700">{docenteActual.nombre}</strong>
+                                </span>
+                            )}
+                            <div className="flex items-center gap-3 flex-wrap justify-end">
+                                <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                                    <span className="w-2.5 h-2.5 rounded-sm bg-green-100 border border-green-300 inline-block" />
+                                    Disponible
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+                                    <span className="w-2.5 h-2.5 rounded-sm bg-neutral-100 border border-neutral-200 inline-block" />
+                                    No disponible
+                                </div>
+                                <span className="text-xs text-neutral-400 hidden sm:inline">· Clic para asignar</span>
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Tabla responsive con scroll horizontal en móvil */}
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse" style={{ minWidth: "700px" }}>
+                        <table className="w-full text-sm border-collapse" style={{ minWidth: "600px" }}>
                             <thead>
-                                <tr className="bg-neutral-50 border-b border-neutral-100">
-                                    <th className="px-4 py-3 text-xs font-medium text-neutral-500 text-left border-r border-neutral-100 w-24 sticky left-0 bg-neutral-50 z-10">
+                                <tr className="border-b border-neutral-100">
+                                    <th className="px-4 py-3 text-xs font-medium text-neutral-500 text-left border-r border-neutral-100 w-20 sticky left-0 bg-white z-10">
                                         Hora
                                     </th>
                                     {DIAS.map(d => (
-                                        <th key={d} className="px-3 py-3 text-xs font-medium text-neutral-500 text-center border-r border-neutral-100 last:border-r-0">
-                                            {d}
+                                        <th key={d} className="px-2 py-2.5 text-center border-r border-neutral-100 last:border-r-0 bg-white min-w-[90px]">
+                                            <span className="text-xs font-semibold text-neutral-500 tracking-wide">{d}</span>
+                                            {/* Mini mapa de disponibilidad por hora — un bloque por slot de la jornada
+                                                Verde = docente disponible en ese bloque · Gris = no disponible
+                                                TODO: se llena automáticamente con datos de GET /get_disponibilidad_docente */}
+                                            {timeSlots.length > 0 && (
+                                                <div className="flex gap-0.5 mt-1.5 justify-center">
+                                                    {timeSlots.map((s, i) => {
+                                                        const slotDisp = isDisponible(d, s.inicio, s.fin);
+                                                        return (
+                                                            <span
+                                                                key={i}
+                                                                title={`${s.inicio}–${s.fin}`}
+                                                                className={`h-1.5 rounded-full flex-1 max-w-[12px] transition-colors ${
+                                                                    slotDisp === true
+                                                                        ? "bg-emerald-400"
+                                                                        : slotDisp === false
+                                                                            ? "bg-neutral-200"
+                                                                            : "bg-neutral-100"
+                                                                }`}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </th>
                                     ))}
                                 </tr>
@@ -295,23 +471,49 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                                             <span className="block text-neutral-300">{slot.fin}</span>
                                         </td>
                                         {DIAS.map(dia => {
-                                            const asig  = getAsignacion(dia, slot.inicio);
-                                            const asig_ = asignaturas.find(a => a.id === asig?.asignatura_id);
-                                            const doc   = docentes.find(d => d.id === asig?.docente_id);
+                                            const asig    = getAsignacion(dia, slot.inicio);
+                                            const asig_   = asignaturas.find(a => a.id === asig?.asignatura_id);
+                                            // TODO: docAsig viene de INIT_DOCENTES; reemplazar con GET /get_docentes
+                                            const docAsig = docentes.find(d => d.id === asig?.docente_id);
+                                            // Disponibilidad del docente del filtro para este bloque horario exacto
+                                            // TODO: isDisponible() usa dispDocente cargado de GET /get_disponibilidad_docente
+                                            const disp    = isDisponible(dia, slot.inicio, slot.fin);
                                             return (
                                                 <td key={dia}
                                                     onClick={() => openModal(dia, slot)}
-                                                    className="px-2 py-1.5 border-r border-neutral-50 last:border-r-0 cursor-pointer hover:bg-neutral-50/80 transition-colors align-top"
+                                                    className="px-1.5 py-1.5 border-r border-neutral-50 last:border-r-0 cursor-pointer align-top"
                                                 >
                                                     {asig ? (
-                                                        <div className="bg-neutral-900 text-white rounded-lg px-2.5 py-2 space-y-0.5 min-h- [44px]">
-                                                            <p className="text-xs font-medium leading-tight">{asig_?.nombre ?? "—"}</p>
-                                                            <p className="text-[10px] text-neutral-400">{doc?.nombre ?? "—"}</p>
-                                                            {asig.aula && <p className="text-[10px] text-neutral-500">Aula {asig.aula}</p>}
+                                                        /* ── Celda ocupada ─────────────────────────────────────
+                                                           TODO: datos de GET /get_asignaciones_horario?periodo_id&jornada_id */
+                                                        <div className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-2.5 py-2.5 min-h-[60px] flex flex-col justify-between transition-all duration-150 shadow-sm hover:shadow-md">
+                                                            <p className="text-[11px] font-semibold leading-tight line-clamp-2">{asig_?.nombre ?? "—"}</p>
+                                                            <div className="mt-1.5 space-y-0.5">
+                                                                <p className="text-[10px] text-neutral-400 truncate">{docAsig?.nombre ?? "—"}</p>
+                                                                {asig.aula && (
+                                                                    <span className="inline-block text-[9px] bg-neutral-700 text-neutral-300 px-1.5 py-0.5 rounded-full">
+                                                                        Aula {asig.aula}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ) : disp === true ? (
+                                                        /* ── Celda disponible — verde prominente ────────────────
+                                                           TODO: disp viene de isDisponible() con datos del backend */
+                                                        <div className="min-h-[60px] rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/80 border border-emerald-200 flex items-center justify-center hover:from-emerald-100 hover:to-emerald-200/80 hover:border-emerald-300 hover:shadow-sm transition-all duration-150 group">
+                                                            <span className="w-7 h-7 rounded-full bg-emerald-200/70 group-hover:bg-emerald-300 flex items-center justify-center text-emerald-700 text-base font-bold transition-all duration-150 group-hover:scale-110">
+                                                                +
+                                                            </span>
+                                                        </div>
+                                                    ) : disp === false ? (
+                                                        /* ── Celda no disponible — apagada, sin interacción */
+                                                        <div className="min-h-[60px] rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center opacity-40 cursor-not-allowed">
+                                                            <span className="text-neutral-400 text-lg select-none font-light">—</span>
                                                         </div>
                                                     ) : (
-                                                        <div className="min-h- [44px] rounded-lg border border-dashed border-neutral-150 flex items-center justify-center hover:border-neutral-300 transition-colors">
-                                                            <span className="text-neutral-250 text-xs">+</span>
+                                                        /* ── Sin datos de disponibilidad — estado neutro */
+                                                        <div className="min-h-[60px] rounded-xl border border-dashed border-neutral-200 flex items-center justify-center hover:border-neutral-300 hover:bg-neutral-50/60 transition-all duration-150">
+                                                            <span className="text-neutral-300 text-sm">+</span>
                                                         </div>
                                                     )}
                                                 </td>
@@ -325,156 +527,47 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                 </div>
             )}
 
-            {/* ── Modal asignar clase ── */}
+            {/* ── Modal: asignar / editar clase ── */}
             {modal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/25 backdrop-blur-sm">
-                    {/* Ancho dinámico: se amplía cuando hay docente seleccionado para mostrar disponibilidad */}
-                    <div className={`bg-white rounded-2xl shadow-2xl w-full p-6 space-y-5 transition-all duration-200 ${
-                        form.docente_id ? "max-w-xl" : "max-w-sm"
-                    }`}>
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-black/25 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 sm:p-6 space-y-5">
 
-                        {/* Encabezado */}
-                        <div className="flex items-start justify-between">
-                            <div>
+                        {/* Encabezado del modal */}
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
                                 <p className="text-xs text-neutral-400 uppercase tracking-wider font-medium">Asignar clase</p>
-                                <h3 className="font-semibold text-neutral-800 mt-1">
+                                <h3 className="font-semibold text-neutral-800 mt-0.5 truncate">
                                     {modal.dia} · {modal.inicio}–{modal.fin}
                                 </h3>
+                                {/* Docente tomado del filtro, no editable aquí
+                                    TODO: conectar con datos de GET /get_docentes */}
+                                <p className="text-xs text-neutral-500 mt-0.5 truncate">{docenteActual?.nombre}</p>
                             </div>
-                            <button onClick={() => setModal(null)} className="text-neutral-400 hover:text-neutral-700 text-xl leading-none mt-0.5">✕</button>
+                            <button
+                                onClick={() => setModal(null)}
+                                className="text-neutral-400 hover:text-neutral-700 text-xl leading-none mt-0.5 shrink-0"
+                            >✕</button>
                         </div>
 
-                        {/* Selector de docente */}
-                        <div>
-                            <label className={cx.label}>Docente</label>
-                            {/* TODO: options desde GET /get_docentes?rol=2
-                                Estructura esperada: [{ id, nombre }]
-                                Al cambiar docente_id el useEffect carga automáticamente su disponibilidad */}
-                            <select className={cx.input} value={form.docente_id}
-                                onChange={e => setForm(f => ({ ...f, docente_id: e.target.value }))}>
-                                <option value="">Selecciona docente</option>
-                                {docentes.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
-                            </select>
-                        </div>
-
-                        {/* ── Bloque de disponibilidad ─────────────────────────────────────────
-                            Se muestra al seleccionar un docente.
-                            Fuente: GET /get_disponibilidad_docente/{docente_id}?periodo_id={id}
-                            La disponibilidad la registra el propio docente desde /disponibilidad
-                        ────────────────────────────────────────────────────────────────────── */}
-                        {form.docente_id && (
-                            <div className="rounded-xl border border-neutral-100 overflow-hidden">
-
-                                {/* Header del bloque */}
-                                <div className="px-4 py-2.5 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between gap-2">
-                                    <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                                        Disponibilidad del docente
-                                    </span>
-                                    {loadingDisp ? (
-                                        <span className="text-xs text-neutral-400 animate-pulse">Cargando…</span>
-                                    ) : (
-                                        <span className="text-xs text-neutral-400">
-                                            {periodos.find(p => p.id === parseInt(filtro.periodo_id))?.nombre}
-                                            {jornadaActual ? ` · ${jornadaActual.nombre}` : ""}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {!loadingDisp && (
-                                    <div className="p-4 space-y-4">
-
-                                        {/* Estado del bloque actual (día y hora del modal) */}
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="text-xs text-neutral-500 shrink-0">Este bloque:</span>
-                                            {(() => {
-                                                const disp = isDisponible(modal.dia, modal.inicio, modal.fin);
-                                                if (disp === null) return (
-                                                    <span className="text-xs text-neutral-400 italic">Sin datos registrados</span>
-                                                );
-                                                return disp ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-100 text-green-700 text-xs font-medium">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                        Disponible
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100 text-red-600 text-xs font-medium">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                                                        No disponible
-                                                    </span>
-                                                );
-                                            })()}
-                                        </div>
-
-                                        {/* Mini grilla semanal — muestra disponibilidad por día/hora de la jornada activa
-                                            Verde oscuro = disponible · Gris claro = no disponible
-                                            Celda con borde = el slot actual del modal */}
-                                        {timeSlots.length > 0 ? (
-                                            <div className="overflow-x-auto -mx-1">
-                                                <table className="w-full border-collapse" style={{ minWidth: "320px" }}>
-                                                    <thead>
-                                                        <tr>
-                                                            <th className="pr-2 pb-1.5 text-[10px] text-neutral-400 font-medium text-right w-12" />
-                                                            {DIAS.map(d => (
-                                                                <th key={d}
-                                                                    className={`pb-1.5 px-0.5 text-[10px] font-semibold text-center ${
-                                                                        modal.dia === d ? "text-neutral-900" : "text-neutral-400"
-                                                                    }`}>
-                                                                    {d.slice(0, 3)}
-                                                                </th>
-                                                            ))}
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {timeSlots.map((slot, i) => (
-                                                            <tr key={i}>
-                                                                <td className="pr-2 py-0.5 text-[10px] text-neutral-400 font-mono text-right whitespace-nowrap align-middle">
-                                                                    {slot.inicio}
-                                                                </td>
-                                                                {DIAS.map(dia => {
-                                                                    const disp       = isDisponible(dia, slot.inicio, slot.fin);
-                                                                    const isCurrent  = modal.dia === dia && modal.inicio === slot.inicio;
-                                                                    return (
-                                                                        <td key={dia} className="px-0.5 py-0.5">
-                                                                            <div className={`h-5 rounded transition-colors ${
-                                                                                isCurrent
-                                                                                    ? disp
-                                                                                        ? "bg-green-500 ring-2 ring-offset-1 ring-green-300"
-                                                                                        : "bg-red-400  ring-2 ring-offset-1 ring-red-200"
-                                                                                    : disp
-                                                                                        ? "bg-neutral-800"
-                                                                                        : "bg-neutral-100"
-                                                                            }`} />
-                                                                        </td>
-                                                                    );
-                                                                })}
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            /* Si no hay jornada seleccionada en el filtro no se puede mostrar la grilla */
-                                            <p className="text-xs text-neutral-400 italic">
-                                                Selecciona una jornada en los filtros para ver la grilla.
-                                            </p>
-                                        )}
-
-                                        {/* Sin disponibilidad registrada */}
-                                        {!dispDocente.length && (
-                                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                                                Este docente no ha registrado disponibilidad para el periodo seleccionado.
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
+                        {/* Aviso si el bloque no tiene disponibilidad registrada
+                            TODO: este aviso desaparecerá automáticamente cuando dispDocente venga del backend */}
+                        {isDisponible(modal.dia, modal.inicio, modal.fin) === false && (
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1" />
+                                <p className="text-xs text-amber-700 leading-relaxed">
+                                    El docente no tiene disponibilidad registrada para este bloque horario.
+                                </p>
                             </div>
                         )}
 
-                        {/* Asignatura y aula */}
-                        <div className="space-y-4">
+                        {/* Asignatura + Grupo en grid 2 cols en sm */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                            {/* Asignatura */}
                             <div>
                                 <label className={cx.label}>Asignatura</label>
-                                {/* TODO: filtrar por programa del filtro activo — GET /get_asignaturas?programa_id={id} */}
+                                {/* TODO: GET /get_asignaturas?programa_id={filtro.programa_id}
+                                    Si no hay programa en filtros se muestran todas las asignaturas */}
                                 <select className={cx.input} value={form.asignatura_id}
                                     onChange={e => setForm(f => ({ ...f, asignatura_id: e.target.value }))}>
                                     <option value="">Selecciona asignatura</option>
@@ -482,28 +575,63 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
                                         <option key={a.id} value={a.id}>{a.nombre} ({a.codigo})</option>
                                     ))}
                                 </select>
+                                {!filtro.programa_id && (
+                                    <p className="text-xs text-neutral-400 mt-1">
+                                        Selecciona un programa en los filtros para acotar.
+                                    </p>
+                                )}
                             </div>
+
+                            {/* Grupo — conjunto de estudiantes que recibirá la clase */}
                             <div>
-                                <label className={cx.label}>Aula / Salón</label>
-                                {/* TODO: options desde GET /get_salones */}
-                                <input className={cx.input} placeholder="Ej: A-201"
-                                    value={form.aula}
-                                    onChange={e => setForm(f => ({ ...f, aula: e.target.value }))} />
+                                <label className={cx.label}>Grupo</label>
+                                {/* TODO: GET /get_grupos?programa_id={filtro.programa_id}
+                                    Estructura esperada: [{ id, nombre, semestre, programa_id, cupo }] */}
+                                <select className={cx.input} value={form.grupo_id}
+                                    onChange={e => setForm(f => ({ ...f, grupo_id: e.target.value }))}>
+                                    <option value="">Selecciona grupo</option>
+                                    {gruposFiltrados.map(g => {
+                                        const prog = programas.find(p => p.id === g.programa_id);
+                                        return (
+                                            <option key={g.id} value={g.id}>
+                                                {g.nombre} · Sem. {g.semestre}{prog ? ` (${prog.codigo})` : ""}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {!filtro.programa_id && (
+                                    <p className="text-xs text-neutral-400 mt-1">
+                                        Selecciona un programa para filtrar grupos.
+                                    </p>
+                                )}
                             </div>
+
+                        </div>
+
+                        {/* Aula */}
+                        <div>
+                            <label className={cx.label}>Aula / Salón</label>
+                            {/* TODO: options desde GET /get_salones */}
+                            <input className={cx.input} placeholder="Ej: A-201"
+                                value={form.aula}
+                                onChange={e => setForm(f => ({ ...f, aula: e.target.value }))} />
                         </div>
 
                         {/* Acciones */}
                         <div className="flex gap-2 pt-1">
-                            <button onClick={handleSave}
-                                disabled={saving || !form.docente_id || !form.asignatura_id}
-                                className={`${cx.btnPrimary} flex-1`}>
-                                {saving ? "Guardando..." : "Guardar"}
+                            <button
+                                onClick={handleSave}
+                                disabled={saving || !form.asignatura_id || !form.grupo_id}
+                                className={`${cx.btnPrimary} flex-1`}
+                            >
+                                {saving ? "Guardando…" : "Guardar"}
                             </button>
                             {form._id && (
                                 <button onClick={() => handleDelete(form._id)} className={cx.btnDanger}>Eliminar</button>
                             )}
                             <button onClick={() => setModal(null)} className={cx.btnSecondary}>Cancelar</button>
                         </div>
+
                     </div>
                 </div>
             )}
@@ -512,21 +640,38 @@ function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignatu
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// TAB: GRUPOS — Facultades y Programas
+// TAB: GRUPOS — Facultades, Programas y Grupos de clase
 // ═════════════════════════════════════════════════════════════════════════════
-function TabGrupos({ facultades, setFacultades, programas, setProgramas }) {
-    const [showFacForm,  setShowFacForm]  = useState(false);
-    const [showProgForm, setShowProgForm] = useState(false);
-    const [facForm,  setFacForm]  = useState({ nombre: "", codigo: "" });
-    const [progForm, setProgForm] = useState({ nombre: "", codigo: "", facultad_id: "" });
-    const [editFacId,  setEditFacId]  = useState(null);
-    const [editProgId, setEditProgId] = useState(null);
+function TabGrupos({ facultades, setFacultades, programas, setProgramas, grupos, setGrupos }) {
+    // ── Estado Facultades ────────────────────────────────────────────────────
+    const [showFacForm, setShowFacForm] = useState(false);
+    const [facForm,     setFacForm]     = useState({ nombre: "", codigo: "" });
+    const [editFacId,   setEditFacId]   = useState(null);
     const [selectedFac, setSelectedFac] = useState(null);
 
+    // ── Estado Programas ─────────────────────────────────────────────────────
+    const [showProgForm, setShowProgForm] = useState(false);
+    const [progForm,     setProgForm]     = useState({ nombre: "", codigo: "", facultad_id: "" });
+    const [editProgId,   setEditProgId]   = useState(null);
+    const [selectedProg, setSelectedProg] = useState(null); // clic en programa filtra grupos
+
+    // ── Estado Grupos ────────────────────────────────────────────────────────
+    const [showGrupoForm, setShowGrupoForm] = useState(false);
+    const [grupoForm,     setGrupoForm]     = useState({ nombre: "", semestre: "", programa_id: "", cupo: "" });
+    const [editGrupoId,   setEditGrupoId]   = useState(null);
+
+    // Filtros en cascada: Facultad → Programa → Grupo
     const progsFiltrados = selectedFac
         ? programas.filter(p => p.facultad_id === selectedFac)
         : programas;
 
+    const gruposFiltrados = selectedProg
+        ? grupos.filter(g => g.programa_id === selectedProg)
+        : selectedFac
+            ? grupos.filter(g => progsFiltrados.some(p => p.id === g.programa_id))
+            : grupos;
+
+    // ── Handlers Facultades ──────────────────────────────────────────────────
     const saveFacultad = (e) => {
         e.preventDefault();
         if (editFacId) {
@@ -541,6 +686,13 @@ function TabGrupos({ facultades, setFacultades, programas, setProgramas }) {
         setShowFacForm(false);
     };
 
+    const deleteFacultad = (id) => {
+        // TODO: await axios.delete(`/eliminar_facultad/${id}`)
+        setFacultades(prev => prev.filter(f => f.id !== id));
+        if (selectedFac === id) { setSelectedFac(null); setSelectedProg(null); }
+    };
+
+    // ── Handlers Programas ───────────────────────────────────────────────────
     const savePrograma = (e) => {
         e.preventDefault();
         const payload = { ...progForm, facultad_id: parseInt(progForm.facultad_id) };
@@ -556,170 +708,332 @@ function TabGrupos({ facultades, setFacultades, programas, setProgramas }) {
         setShowProgForm(false);
     };
 
-    const deleteFacultad = (id) => {
-        // TODO: await axios.delete(`/eliminar_facultad/${id}`)
-        setFacultades(prev => prev.filter(f => f.id !== id));
-        if (selectedFac === id) setSelectedFac(null);
-    };
-
     const deletePrograma = (id) => {
         // TODO: await axios.delete(`/eliminar_programa/${id}`)
         setProgramas(prev => prev.filter(p => p.id !== id));
+        if (selectedProg === id) setSelectedProg(null);
+    };
+
+    // ── Handlers Grupos ──────────────────────────────────────────────────────
+    const saveGrupo = (e) => {
+        e.preventDefault();
+        const payload = {
+            ...grupoForm,
+            semestre:    parseInt(grupoForm.semestre),
+            programa_id: parseInt(grupoForm.programa_id),
+            cupo:        grupoForm.cupo ? parseInt(grupoForm.cupo) : null,
+        };
+        if (editGrupoId) {
+            // TODO: await axios.put(`/update_grupo/${editGrupoId}`, payload)
+            setGrupos(prev => prev.map(g => g.id === editGrupoId ? { ...g, ...payload } : g));
+            setEditGrupoId(null);
+        } else {
+            // TODO: await axios.post("/crear_grupo", payload)
+            setGrupos(prev => [...prev, { id: newId(), ...payload }]);
+        }
+        setGrupoForm({ nombre: "", semestre: "", programa_id: "", cupo: "" });
+        setShowGrupoForm(false);
+    };
+
+    const deleteGrupo = (id) => {
+        // TODO: await axios.delete(`/eliminar_grupo/${id}`)
+        setGrupos(prev => prev.filter(g => g.id !== id));
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="space-y-5">
 
-            {/* ── Facultades ── */}
-            <div className={cx.card}>
-                <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
-                    <div>
-                        <h2 className="font-semibold text-neutral-800">Facultades</h2>
-                        <p className="text-xs text-neutral-400 mt-0.5">{facultades.length} registradas · clic para filtrar programas</p>
+            {/* ── Fila superior: Facultades + Programas ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                {/* ── Facultades ── */}
+                <div className={cx.card}>
+                    <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+                        <div>
+                            <h2 className="font-semibold text-neutral-800">Facultades</h2>
+                            <p className="text-xs text-neutral-400 mt-0.5">{facultades.length} registradas · clic para filtrar</p>
+                        </div>
+                        <button onClick={() => { setShowFacForm(v => !v); setEditFacId(null); setFacForm({ nombre: "", codigo: "" }); }}
+                            className={cx.btnPrimary}>
+                            {showFacForm ? "Cancelar" : "+ Nueva"}
+                        </button>
                     </div>
-                    <button onClick={() => { setShowFacForm(v => !v); setEditFacId(null); setFacForm({ nombre: "", codigo: "" }); }}
-                        className={cx.btnPrimary}>
-                        {showFacForm ? "Cancelar" : "+ Nueva"}
-                    </button>
+
+                    {showFacForm && (
+                        <form onSubmit={saveFacultad} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={cx.label}>Nombre</label>
+                                    <input required className={cx.input} placeholder="Ej: Ingeniería"
+                                        value={facForm.nombre}
+                                        onChange={e => setFacForm(f => ({ ...f, nombre: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <label className={cx.label}>Código</label>
+                                    <input required className={cx.input} placeholder="Ej: ING" maxLength={8}
+                                        value={facForm.codigo}
+                                        onChange={e => setFacForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button type="submit" className={cx.btnPrimary}>{editFacId ? "Actualizar" : "Agregar"}</button>
+                                <button type="button" onClick={() => { setShowFacForm(false); setEditFacId(null); }} className={cx.btnSecondary}>Cancelar</button>
+                            </div>
+                        </form>
+                    )}
+
+                    <div className="divide-y divide-neutral-50">
+                        {facultades.map(f => (
+                            <div key={f.id}
+                                onClick={() => { setSelectedFac(selectedFac === f.id ? null : f.id); setSelectedProg(null); }}
+                                className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                    selectedFac === f.id ? "bg-neutral-900" : "hover:bg-neutral-50"
+                                }`}
+                            >
+                                <div>
+                                    <p className={`text-sm font-medium ${selectedFac === f.id ? "text-white" : "text-neutral-800"}`}>{f.nombre}</p>
+                                    <p className={`text-xs mt-0.5 font-mono ${selectedFac === f.id ? "text-neutral-500" : "text-neutral-400"}`}>{f.codigo}</p>
+                                </div>
+                                <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                                    <button className={selectedFac === f.id
+                                        ? "px-3 py-1.5 text-xs text-neutral-300 border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors"
+                                        : cx.btnEdit}
+                                        onClick={() => { setFacForm({ nombre: f.nombre, codigo: f.codigo }); setEditFacId(f.id); setShowFacForm(true); }}>
+                                        Editar
+                                    </button>
+                                    <button className={cx.btnDanger} onClick={() => deleteFacultad(f.id)}>Eliminar</button>
+                                </div>
+                            </div>
+                        ))}
+                        {facultades.length === 0 && (
+                            <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin facultades registradas</p>
+                        )}
+                    </div>
                 </div>
 
-                {showFacForm && (
-                    <form onSubmit={saveFacultad} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className={cx.label}>Nombre</label>
-                                <input required className={cx.input} placeholder="Ej: Ingeniería"
-                                    value={facForm.nombre}
-                                    onChange={e => setFacForm(f => ({ ...f, nombre: e.target.value }))} />
-                            </div>
-                            <div>
-                                <label className={cx.label}>Código</label>
-                                <input required className={cx.input} placeholder="Ej: ING" maxLength={8}
-                                    value={facForm.codigo}
-                                    onChange={e => setFacForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
-                            </div>
+                {/* ── Programas — clic selecciona y filtra grupos ── */}
+                <div className={cx.card}>
+                    <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+                        <div>
+                            <h2 className="font-semibold text-neutral-800">
+                                Programas
+                                {selectedFac && <span className="ml-2 text-xs font-normal text-neutral-400">— {facultades.find(f => f.id === selectedFac)?.nombre}</span>}
+                            </h2>
+                            <p className="text-xs text-neutral-400 mt-0.5">{progsFiltrados.length} programas · clic para filtrar grupos</p>
                         </div>
-                        <div className="flex gap-2">
-                            <button type="submit" className={cx.btnPrimary}>{editFacId ? "Actualizar" : "Agregar"}</button>
-                            <button type="button" onClick={() => { setShowFacForm(false); setEditFacId(null); }} className={cx.btnSecondary}>Cancelar</button>
-                        </div>
-                    </form>
-                )}
+                        <button onClick={() => {
+                            setShowProgForm(v => !v);
+                            setEditProgId(null);
+                            setProgForm({ nombre: "", codigo: "", facultad_id: selectedFac ?? "" });
+                        }} className={cx.btnPrimary}>
+                            {showProgForm ? "Cancelar" : "+ Nuevo"}
+                        </button>
+                    </div>
 
-                <div className="divide-y divide-neutral-50">
-                    {facultades.map(f => (
-                        <div key={f.id}
-                            onClick={() => setSelectedFac(selectedFac === f.id ? null : f.id)}
-                            className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-colors ${
-                                selectedFac === f.id ? "bg-neutral-900" : "hover:bg-neutral-50"
-                            }`}
-                        >
+                    {showProgForm && (
+                        <form onSubmit={savePrograma} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
                             <div>
-                                <p className={`text-sm font-medium ${selectedFac === f.id ? "text-white" : "text-neutral-800"}`}>{f.nombre}</p>
-                                <p className={`text-xs mt-0.5 font-mono ${selectedFac === f.id ? "text-neutral-500" : "text-neutral-400"}`}>{f.codigo}</p>
+                                <label className={cx.label}>Nombre del programa</label>
+                                <input required className={cx.input} placeholder="Ej: Ingeniería de Sistemas"
+                                    value={progForm.nombre}
+                                    onChange={e => setProgForm(f => ({ ...f, nombre: e.target.value }))} />
                             </div>
-                            <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                                <button className={selectedFac === f.id
-                                    ? "px-3 py-1.5 text-xs text-neutral-300 border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors"
-                                    : cx.btnEdit}
-                                    onClick={() => { setFacForm({ nombre: f.nombre, codigo: f.codigo }); setEditFacId(f.id); setShowFacForm(true); }}>
-                                    Editar
-                                </button>
-                                <button className={cx.btnDanger} onClick={() => deleteFacultad(f.id)}>Eliminar</button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={cx.label}>Código</label>
+                                    <input required className={cx.input} placeholder="Ej: ISI" maxLength={8}
+                                        value={progForm.codigo}
+                                        onChange={e => setProgForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
+                                </div>
+                                <div>
+                                    <label className={cx.label}>Facultad</label>
+                                    {/* TODO: options desde GET /get_facultades */}
+                                    <select required className={cx.input} value={progForm.facultad_id}
+                                        onChange={e => setProgForm(f => ({ ...f, facultad_id: e.target.value }))}>
+                                        <option value="">Selecciona</option>
+                                        {facultades.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                    {facultades.length === 0 && (
-                        <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin facultades registradas</p>
+                            <div className="flex gap-2">
+                                <button type="submit" className={cx.btnPrimary}>{editProgId ? "Actualizar" : "Agregar"}</button>
+                                <button type="button" onClick={() => { setShowProgForm(false); setEditProgId(null); }} className={cx.btnSecondary}>Cancelar</button>
+                            </div>
+                        </form>
                     )}
+
+                    {!selectedFac && (
+                        <p className="px-5 py-3 text-xs text-neutral-400 italic border-b border-neutral-50 bg-neutral-50/50">
+                            Selecciona una facultad para filtrar sus programas
+                        </p>
+                    )}
+
+                    <div className="divide-y divide-neutral-50">
+                        {progsFiltrados.map(p => {
+                            const fac = facultades.find(f => f.id === p.facultad_id);
+                            const nGrupos = grupos.filter(g => g.programa_id === p.id).length;
+                            return (
+                                <div key={p.id}
+                                    onClick={() => setSelectedProg(selectedProg === p.id ? null : p.id)}
+                                    className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                        selectedProg === p.id ? "bg-neutral-900" : "hover:bg-neutral-50"
+                                    }`}
+                                >
+                                    <div className="min-w-0">
+                                        <p className={`text-sm font-medium truncate ${selectedProg === p.id ? "text-white" : "text-neutral-800"}`}>{p.nombre}</p>
+                                        <p className={`text-xs mt-0.5 font-mono ${selectedProg === p.id ? "text-neutral-500" : "text-neutral-400"}`}>
+                                            {p.codigo} · {fac?.nombre ?? "—"}
+                                            <span className={`ml-2 ${selectedProg === p.id ? "text-neutral-400" : "text-neutral-300"}`}>· {nGrupos} grupos</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0 ml-3" onClick={e => e.stopPropagation()}>
+                                        <button className={selectedProg === p.id
+                                            ? "px-3 py-1.5 text-xs text-neutral-300 border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors"
+                                            : cx.btnEdit}
+                                            onClick={() => { setProgForm({ nombre: p.nombre, codigo: p.codigo, facultad_id: p.facultad_id }); setEditProgId(p.id); setShowProgForm(true); }}>
+                                            Editar
+                                        </button>
+                                        <button className={cx.btnDanger} onClick={() => deletePrograma(p.id)}>Eliminar</button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {progsFiltrados.length === 0 && (
+                            <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin programas registrados</p>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* ── Programas ── */}
+            {/* ── Grupos de clase — card ancho completo ── */}
             <div className={cx.card}>
-                <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                     <div>
                         <h2 className="font-semibold text-neutral-800">
-                            Programas
-                            {selectedFac && <span className="ml-2 text-xs font-normal text-neutral-400">
-                                — {facultades.find(f => f.id === selectedFac)?.nombre}
-                            </span>}
+                            Grupos
+                            {selectedProg && (
+                                <span className="ml-2 text-xs font-normal text-neutral-400">
+                                    — {programas.find(p => p.id === selectedProg)?.nombre}
+                                </span>
+                            )}
                         </h2>
-                        <p className="text-xs text-neutral-400 mt-0.5">{progsFiltrados.length} programas</p>
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                            {gruposFiltrados.length} grupos · cada grupo es el conjunto de estudiantes de un semestre
+                        </p>
                     </div>
-                    <button onClick={() => {
-                        setShowProgForm(v => !v);
-                        setEditProgId(null);
-                        setProgForm({ nombre: "", codigo: "", facultad_id: selectedFac ?? "" });
-                    }} className={cx.btnPrimary}>
-                        {showProgForm ? "Cancelar" : "+ Nuevo"}
-                    </button>
+                    <div className="flex gap-2 flex-wrap">
+                        {/* Filtro rápido por programa si no se seleccionó desde la lista */}
+                        {/* TODO: options desde GET /get_programas */}
+                        <select
+                            className="px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                            value={selectedProg ?? ""}
+                            onChange={e => setSelectedProg(e.target.value ? parseInt(e.target.value) : null)}
+                        >
+                            <option value="">Todos los programas</option>
+                            {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                        </select>
+                        <button onClick={() => {
+                            setShowGrupoForm(v => !v);
+                            setEditGrupoId(null);
+                            setGrupoForm({ nombre: "", semestre: "", programa_id: selectedProg ?? "", cupo: "" });
+                        }} className={cx.btnPrimary}>
+                            {showGrupoForm ? "Cancelar" : "+ Nuevo grupo"}
+                        </button>
+                    </div>
                 </div>
 
-                {showProgForm && (
-                    <form onSubmit={savePrograma} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
-                        <div>
-                            <label className={cx.label}>Nombre del programa</label>
-                            <input required className={cx.input} placeholder="Ej: Ingeniería de Sistemas"
-                                value={progForm.nombre}
-                                onChange={e => setProgForm(f => ({ ...f, nombre: e.target.value }))} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                {/* Formulario de grupo */}
+                {showGrupoForm && (
+                    <form onSubmit={saveGrupo} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div>
-                                <label className={cx.label}>Código</label>
-                                <input required className={cx.input} placeholder="Ej: ISI" maxLength={8}
-                                    value={progForm.codigo}
-                                    onChange={e => setProgForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
+                                <label className={cx.label}>Nombre del grupo</label>
+                                <input required className={cx.input} placeholder="Ej: Grupo 01"
+                                    value={grupoForm.nombre}
+                                    onChange={e => setGrupoForm(f => ({ ...f, nombre: e.target.value }))} />
                             </div>
                             <div>
-                                <label className={cx.label}>Facultad</label>
-                                {/* TODO: options desde GET /get_facultades */}
-                                <select required className={cx.input} value={progForm.facultad_id}
-                                    onChange={e => setProgForm(f => ({ ...f, facultad_id: e.target.value }))}>
-                                    <option value="">Selecciona</option>
-                                    {facultades.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                                <label className={cx.label}>Semestre</label>
+                                <input type="number" min="1" max="12" required className={cx.input} placeholder="Ej: 1"
+                                    value={grupoForm.semestre}
+                                    onChange={e => setGrupoForm(f => ({ ...f, semestre: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label className={cx.label}>Programa académico</label>
+                                {/* TODO: options desde GET /get_programas */}
+                                <select required className={cx.input} value={grupoForm.programa_id}
+                                    onChange={e => setGrupoForm(f => ({ ...f, programa_id: e.target.value }))}>
+                                    <option value="">Selecciona programa</option>
+                                    {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                                 </select>
+                            </div>
+                            <div>
+                                <label className={cx.label}>Cupo (opcional)</label>
+                                <input type="number" min="1" className={cx.input} placeholder="Ej: 35"
+                                    value={grupoForm.cupo}
+                                    onChange={e => setGrupoForm(f => ({ ...f, cupo: e.target.value }))} />
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button type="submit" className={cx.btnPrimary}>{editProgId ? "Actualizar" : "Agregar"}</button>
-                            <button type="button" onClick={() => { setShowProgForm(false); setEditProgId(null); }} className={cx.btnSecondary}>Cancelar</button>
+                            <button type="submit" className={cx.btnPrimary}>{editGrupoId ? "Actualizar" : "Agregar grupo"}</button>
+                            <button type="button" onClick={() => { setShowGrupoForm(false); setEditGrupoId(null); }} className={cx.btnSecondary}>Cancelar</button>
                         </div>
                     </form>
                 )}
 
-                {!selectedFac && (
-                    <p className="px-5 py-3 text-xs text-neutral-400 italic border-b border-neutral-50 bg-neutral-50/50">
-                        Selecciona una facultad para filtrar sus programas
-                    </p>
-                )}
-
-                <div className="divide-y divide-neutral-50">
-                    {progsFiltrados.map(p => {
-                        const fac = facultades.find(f => f.id === p.facultad_id);
-                        return (
-                            <div key={p.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-neutral-50 transition-colors">
-                                <div>
-                                    <p className="text-sm font-medium text-neutral-800">{p.nombre}</p>
-                                    <p className="text-xs text-neutral-400 mt-0.5 font-mono">{p.codigo} · {fac?.nombre ?? "—"}</p>
-                                </div>
-                                <div className="flex gap-2 shrink-0">
-                                    <button className={cx.btnEdit}
-                                        onClick={() => {
-                                            setProgForm({ nombre: p.nombre, codigo: p.codigo, facultad_id: p.facultad_id });
-                                            setEditProgId(p.id);
-                                            setShowProgForm(true);
-                                        }}>
-                                        Editar
-                                    </button>
-                                    <button className={cx.btnDanger} onClick={() => deletePrograma(p.id)}>Eliminar</button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    {progsFiltrados.length === 0 && (
-                        <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin programas registrados</p>
-                    )}
+                {/* Tabla de grupos */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-neutral-50 border-b border-neutral-100">
+                            <tr>
+                                <th className={cx.th}>Grupo</th>
+                                <th className={cx.th}>Semestre</th>
+                                <th className={cx.th}>Programa</th>
+                                <th className={cx.th}>Cupo</th>
+                                <th className={cx.th + " text-right"}>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-50">
+                            {gruposFiltrados.map(g => {
+                                const prog = programas.find(p => p.id === g.programa_id);
+                                return (
+                                    <tr key={g.id} className="hover:bg-neutral-50/50 transition-colors">
+                                        <td className={`${cx.td} font-medium`}>{g.nombre}</td>
+                                        <td className={cx.td}>
+                                            <span className={`${cx.badge} bg-neutral-100 text-neutral-600`}>Sem. {g.semestre}</span>
+                                        </td>
+                                        <td className={`${cx.td} text-neutral-500 max-w-[200px] truncate`}>{prog?.nombre ?? "—"}</td>
+                                        <td className={cx.td}>
+                                            {g.cupo
+                                                ? <span className={`${cx.badge} bg-neutral-900 text-white`}>{g.cupo}</span>
+                                                : <span className="text-neutral-300">—</span>
+                                            }
+                                        </td>
+                                        <td className={`${cx.td} text-right`}>
+                                            <div className="flex gap-2 justify-end">
+                                                <button className={cx.btnEdit}
+                                                    onClick={() => {
+                                                        setGrupoForm({ nombre: g.nombre, semestre: g.semestre, programa_id: g.programa_id, cupo: g.cupo ?? "" });
+                                                        setEditGrupoId(g.id);
+                                                        setShowGrupoForm(true);
+                                                    }}>
+                                                    Editar
+                                                </button>
+                                                <button className={cx.btnDanger} onClick={() => deleteGrupo(g.id)}>Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {gruposFiltrados.length === 0 && (
+                                <tr>
+                                    <td colSpan="5" className="px-5 py-10 text-center text-neutral-400 italic text-sm">
+                                        {selectedProg ? "Este programa no tiene grupos registrados" : "Sin grupos registrados"}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1106,8 +1420,11 @@ export function AdminHorario() {
     const [jornadas,     setJornadas]     = useState(INIT_JORNADAS);
     const [asignaturas,  setAsignaturas]  = useState(INIT_ASIGNATURAS);
     const [docentes,     setDocentes]     = useState(INIT_DOCENTES); // TODO: GET /get_docentes
+    const [grupos,       setGrupos]       = useState(INIT_GRUPOS);  // TODO: GET /get_grupos
     const [asignaciones, setAsignaciones] = useState([]);            // TODO: GET /get_asignaciones_horario
-    const [filtro, setFiltro] = useState({ periodo_id: "", jornada_id: "", programa_id: "" });
+    // docente_id se agrega al filtro; controla qué grilla se muestra y qué disponibilidad se carga
+    // TODO: persistir filtro en sessionStorage/URL params si se quiere mantener entre navegaciones
+    const [filtro, setFiltro] = useState({ periodo_id: "", jornada_id: "", docente_id: "", programa_id: "" });
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -1123,6 +1440,7 @@ export function AdminHorario() {
         //   fetchJornadas().then(setJornadas),
         //   fetchAsignaturas().then(setAsignaturas),
         //   fetchDocentes().then(setDocentes),
+        //   fetchGrupos().then(setGrupos),
         //   fetchAsignaciones().then(setAsignaciones),
         // ]).catch(console.error);
     }, []);
@@ -1166,7 +1484,7 @@ export function AdminHorario() {
                         filtro={filtro} setFiltro={setFiltro}
                         periodos={periodos} jornadas={jornadas}
                         programas={programas} asignaturas={asignaturas}
-                        docentes={docentes}
+                        docentes={docentes} grupos={grupos}
                         asignaciones={asignaciones} setAsignaciones={setAsignaciones}
                     />
                 )}
@@ -1174,6 +1492,7 @@ export function AdminHorario() {
                     <TabGrupos
                         facultades={facultades} setFacultades={setFacultades}
                         programas={programas}   setProgramas={setProgramas}
+                        grupos={grupos}         setGrupos={setGrupos}
                     />
                 )}
                 {activeTab === "periodos" && (
