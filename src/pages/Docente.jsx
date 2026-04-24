@@ -9,6 +9,9 @@ export function Docente() {
         const token = localStorage.getItem('token');
         if (!token) { navigate("/login"); return; }
         const decodedToken = decodeToken(token);
+
+        // console.log(decodedToken);
+
         if (!decodedToken) { localStorage.removeItem('token'); navigate("/login"); return; }
         if (decodedToken.rol !== 2) { localStorage.removeItem('token'); navigate("/login"); return; }
     });
