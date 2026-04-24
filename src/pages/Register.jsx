@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createUser } from "../services/userService.js";
+import { Link } from "react-router-dom";
 
 export function Register(){
     const [form,setForm] = useState({
@@ -161,9 +162,9 @@ export function Register(){
                     <div className="text-center pt-3">
                         <p className="text-sm text-neutral-500">
                             ¿Ya tienes cuenta?{" "}
-                            <a href="/login" className="font-semibold text-black hover:underline transition-all">
+                            <Link to="/login" className="font-semibold text-black hover:underline transition-all">
                                 Iniciar Sesión
-                            </a>
+                            </Link>
                         </p>
                     </div>
                 </form>
