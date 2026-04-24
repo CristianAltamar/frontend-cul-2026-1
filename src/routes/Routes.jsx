@@ -10,6 +10,7 @@ import { AdminCrearDocente } from "../pages/AdminCrearDocente.jsx";
 import { Docente } from "../pages/Docente.jsx";
 import { Disponibilidad } from "../pages/Disponibilidad.jsx";
 import { AdminHorario } from "../pages/AdminHorario.jsx";
+import { AdminReportes } from "../pages/AdminReportes.jsx";
 
 export function AppRoutes() {
     return (
@@ -29,6 +30,7 @@ export function AppRoutes() {
                     <Route path="/admin/crear-usuario"  element={<AdminCrearDocente />} />
                     <Route path="/admin/docentes"       element={<AdminDocentes />}     />
                     <Route path="/admin/horario"        element={<AdminHorario />}      />
+                    <Route path="/admin/reportes"       element={<AdminReportes />}     />
                 </Route>
             </Routes>
         </BrowserRouter>

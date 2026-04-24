@@ -11,6 +11,7 @@ const adminLinks = [
     { to: "/admin/crear-usuario", label: "Crear usuario" },
     { to: "/admin/docentes",      label: "Usuarios"      },
     { to: "/admin/horario",       label: "Horario"       },
+    { to: "/admin/reportes",      label: "Reportes"      },
 ];
 
 export function Navbar() {

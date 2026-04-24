@@ -50,7 +50,7 @@ export function AdminPanel() {
                             onClick={handleLogout}
                             className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium"
                         >
-                            Cerrar sesión
+                        Cerrar sesión
                         </button>
                     </div>
                 </div>
@@ -63,7 +63,7 @@ export function AdminPanel() {
                     <p className="mt-2 text-sm text-neutral-500">Gestiona los recursos e información del sistema</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     <Link to="/admin/crear-usuario" className="group block h-full">
                         <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
@@ -83,6 +83,13 @@ export function AdminPanel() {
                         <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
                             <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Horario</h3>
                             <p className="mt-2 text-sm text-neutral-500">Gestionar el horario académico</p>
+                        </div>
+                    </Link>
+
+                    <Link to="/admin/reportes" className="group block h-full">
+                        <div className="h-full bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm hover:shadow-md hover:border-neutral-200 transition-all cursor-pointer">
+                            <h3 className="text-lg font-medium text-neutral-800 group-hover:text-black transition-colors">Reportes</h3>
+                            <p className="mt-2 text-sm text-neutral-500">Clases asignadas por docente, programa y fechas</p>
                         </div>
                     </Link>
 
