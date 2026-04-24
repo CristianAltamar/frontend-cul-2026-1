@@ -1,6 +1,6 @@
 import { useState, useEffect, use } from "react";
 import { getDisponibilidadDocente } from "../../services/disponibilidadService.js";
-import { getHorarioDocente, crearHorario, updateHorario, deleteHorario } from "../../services/horarioService.js";
+import { getHorarioDocente, crearHorario, updateHorario, deleteHorario, getHorarios } from "../../services/horarioService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { createSchedule, formatTimeForApi } from "../../utils/schedule.js";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
@@ -126,20 +126,27 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
     };
 
     const handleGrupoChange = (grupoId) => {
-        setForm(f => ({ ...f, grupo_id: grupoId }));
-        if (!grupoId || !modal) { setConflictoGrupo(null); return; }
-        const conflict = asignaciones.find(a =>{
-            if (a.id_grupo    === parseInt(grupoId)) console.log("YEs");
-            return (a.id_grupo    === parseInt(grupoId) &&
-            a.dia_semana  === modal.dia &&
-            a.hora_inicio === modal.inicio &&
-            a.id_periodo  === parseInt(filtro.periodo_id) &&
-            a.id_jornada  === parseInt(filtro.jornada_id) &&
-            a.id_docente  !== parseInt(filtro.docente_id)
-        )}
-        );
-        console.log("Conflicto al seleccionar grupo:", conflict);
-        setConflictoGrupo(conflict ?? null);
+        const g = async () => {
+            try {
+                const data = await getHorarios();
+                if (!data || !Array.isArray(data)) { setConflictoGrupo(null); return; }
+
+                setForm(f => ({ ...f, grupo_id: grupoId }));
+                if (!grupoId || !modal) { setConflictoGrupo(null); return; }
+                const conflict = data.find(a => 
+                    a.id_grupo    === parseInt(grupoId) &&
+                    a.dia_semana  === DIA_NUM[modal.dia] &&
+                    a.hora_inicio === formatTimeForApi(modal.inicio) &&
+                    a.id_periodo  === parseInt(filtro.periodo_id) &&
+                    a.id_jornada  === parseInt(filtro.jornada_id) &&
+                    a.id_docente  !== parseInt(filtro.docente_id)
+                );
+                setConflictoGrupo(conflict ?? null);
+            } catch (error) {
+                console.error("Error al cargar los horarios:", error);
+                setConflictoGrupo(null);}
+        }
+        g();
     };
 
     const hasConflict = !!conflictoGrupo;
@@ -362,21 +369,18 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                     onChange={e => handleGrupoChange(e.target.value)}
                                 >
                                     <option value="">Selecciona grupo</option>
-                                    {gruposFiltrados.map(g => {
-                                        const prog = programas.find(p => p.id === g.programa_id);
-                                        return (
+                                    {filtro.programa_id && gruposFiltrados.map(g =>  (
                                             <option key={g.id} value={g.id}>
                                                 {g.codigo}
                                             </option>
-                                        );
-                                    })}
+                                    ))}
                                 </select>
                                 {conflictoGrupo ? (
                                     <p className="text-xs text-red-600 mt-1 font-medium">
-                                        Ya asignado a <strong>{docentes.find(d => d.id === conflictoGrupo.docente_id)?.nombre ?? "otro docente"}</strong> en este horario.
+                                        Ya asignado a <strong>{conflictoGrupo?.docente ?? "otro docente"}</strong> en este horario.
                                     </p>
                                 ) : !filtro.programa_id ? (
-                                    <p className="text-xs text-neutral-400 mt-1">Selecciona un programa para filtrar grupos.</p>
+                                    <p className="text-xs text-red-400 mt-1">Selecciona un programa para filtrar grupos.</p>
                                 ) : null}
                             </div>
 

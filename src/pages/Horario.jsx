@@ -18,8 +18,9 @@ export function Horario() {
             const d = decodeToken(token);
             if (!d) { localStorage.removeItem('token'); navigate("/login"); return; }
             try {
-                const data = await getHorarioDocente(d.user_id);
-                setHorario(data.resultado ?? []);
+                const data = await getHorarioDocente(d.user_id, 1);
+                console.log("Horario cargado:", data);
+                setHorario(data ?? []);
             } catch (err) {
                 console.error("Error cargando horario:", err);
                 setHorario([]);
@@ -65,7 +66,7 @@ export function Horario() {
                                             <td className="px-6 py-4 text-neutral-600">{h.hora_inicio}</td>
                                             <td className="px-6 py-4 text-neutral-600">{h.hora_fin}</td>
                                             <td className="px-6 py-4 text-neutral-600">{h.codigo_grupo}</td>
-                                            <td className="px-6 py-4 text-neutral-600">{h.codigo_salon}</td>
+                                            <td className="px-6 py-4 text-neutral-600">{h.asignatura}</td>
                                             <td className="px-6 py-4 text-neutral-600">{h.jornada}</td>
                                         </tr>
                                     ))}
