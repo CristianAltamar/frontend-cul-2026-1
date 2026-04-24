@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createJornada, updateJornada, deleteJornada } from "../../services/jornadaService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
+import { formatTimeForApi } from "../../utils/schedule.js";
 
 export function TabJornadas({ jornadas, setJornadas }) {
     const [showForm, setShowForm] = useState(false);
@@ -68,13 +69,13 @@ export function TabJornadas({ jornadas, setJornadas }) {
                             <label className={cx.label}>Hora inicio</label>
                             <input type="time" required className={cx.input}
                                 value={form.hora_inicio}
-                                onChange={e => setForm(f => ({ ...f, hora_inicio: e.target.value }))} />
+                                onChange={e => setForm(f => ({ ...f, hora_inicio: formatTimeForApi(e.target.value) }))} />
                         </div>
                         <div>
                             <label className={cx.label}>Hora fin</label>
                             <input type="time" required className={cx.input}
                                 value={form.hora_fin}
-                                onChange={e => setForm(f => ({ ...f, hora_fin: e.target.value }))} />
+                                onChange={e => setForm(f => ({ ...f, hora_fin: formatTimeForApi(e.target.value) }))} />
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -103,7 +104,7 @@ export function TabJornadas({ jornadas, setJornadas }) {
                         </div>
                         <div className="flex gap-2 shrink-0">
                             <button className={cx.btnEdit}
-                                onClick={() => { setForm({ nombre: j.nombre, hora_inicio: j.hora_inicio, hora_fin: j.hora_fin }); setEditId(j.id); setShowForm(true); }}>
+                                onClick={() => { setForm({ nombre: j.nombre, hora_inicio: formatTimeForApi(j.hora_inicio), hora_fin: formatTimeForApi(j.hora_fin) }); setEditId(j.id); setShowForm(true); }}>
                                 Editar
                             </button>
                             <button className={cx.btnDanger} onClick={() => handleDelete(j.id)}>Eliminar</button>

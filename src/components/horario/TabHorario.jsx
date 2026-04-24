@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { getDisponibilidadDocente } from "../../services/disponibilidadService.js";
 import { getHorarioDocente, crearHorario, updateHorario, deleteHorario } from "../../services/horarioService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { createSchedule, formatTimeForApi } from "../../utils/schedule.js";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
+import { Slots } from "./tabHorario/Slots.jsx";
+import { TableHorario } from "./tabHorario/TableHorario.jsx";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -16,7 +18,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
 
     const [dispDocente, setDispDocente] = useState([]);
     const [loadingDisp, setLoadingDisp] = useState(false);
-    const [, setLoadingAsignaciones] = useState(false);
+    const [loadingAsignaciones, setLoadingAsignaciones] = useState(false);
 
     const toMin = t => { const p = t.split(":"); return parseInt(p[0]) * 60 + parseInt(p[1] || 0); };
     const DIA_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6 };
@@ -32,6 +34,14 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
             toMin(s.hora_fin)   > aStart
         );
     };
+
+    useEffect(() => {
+        if (!modal) return;
+        if (form.asignatura_id) {
+            setFiltro(f => ({ ...f, programa_id: asignaturas.find(a => a.id === parseInt(form.asignatura_id))?.programa_id || "" }));
+        }
+    }, [modal]);
+
 
     useEffect(() => {
         if (!filtro.docente_id || !filtro.periodo_id) {
@@ -78,16 +88,18 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
         ? asignaturas.filter(a => a.programa_id === parseInt(filtro.programa_id))
         : asignaturas;
 
-    const gruposFiltrados = grupos;
+    const gruposFiltrados = grupos.filter(g => g.id_jornada === parseInt(filtro.jornada_id));
+
+
 
     // Solo asignaciones del docente seleccionado → lo que se muestra como tarjeta en la grilla
-    const getAsignacionPropia = (dia, hora) =>
-        asignaciones.find(a =>
-            a.dia         === dia &&
-            a.hora_inicio === hora &&
-            a.periodo_id  === parseInt(filtro.periodo_id) &&
-            a.jornada_id  === parseInt(filtro.jornada_id) &&
-            a.docente_id  === parseInt(filtro.docente_id)
+    const getAsignacionPropia = (dia, hora) => 
+        asignaciones.find(a => 
+            a?.dia_semana  === dia &&
+            a?.hora_inicio === hora &&
+            a?.id_periodo  === parseInt(filtro.periodo_id) &&
+            a?.id_jornada  === parseInt(filtro.jornada_id) &&
+            a?.id_docente  === parseInt(filtro.docente_id)
         );
 
     const filtersReady = filtro.periodo_id && filtro.jornada_id && filtro.docente_id;
@@ -104,10 +116,10 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
             showBlockMsg("Este docente no tiene disponibilidad en este bloque horario.");
             return;
         }
-        const existing = getAsignacionPropia(dia, slot.inicio);
+        const existing = getAsignacionPropia(DIA_NUM[dia], formatTimeForApi(slot.inicio));
         setConflictoGrupo(null);
         setForm(existing
-            ? { asignatura_id: existing.asignatura_id, grupo_id: existing.grupo_id || "", aula: existing.aula, _id: existing.id }
+            ? { asignatura_id: String(existing.id_asignatura), grupo_id: String(existing.id_grupo) || "", aula: existing?.aula, _id: existing.id }
             : { asignatura_id: "", grupo_id: "", aula: "", _id: null }
         );
         setModal({ dia, ...slot });
@@ -116,15 +128,17 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
     const handleGrupoChange = (grupoId) => {
         setForm(f => ({ ...f, grupo_id: grupoId }));
         if (!grupoId || !modal) { setConflictoGrupo(null); return; }
-        const conflict = asignaciones.find(a =>
-            a.grupo_id    === parseInt(grupoId) &&
-            a.dia         === modal.dia &&
+        const conflict = asignaciones.find(a =>{
+            if (a.id_grupo    === parseInt(grupoId)) console.log("YEs");
+            return (a.id_grupo    === parseInt(grupoId) &&
+            a.dia_semana  === modal.dia &&
             a.hora_inicio === modal.inicio &&
-            a.periodo_id  === parseInt(filtro.periodo_id) &&
-            a.jornada_id  === parseInt(filtro.jornada_id) &&
-            a.docente_id  !== parseInt(filtro.docente_id) &&
-            a.id          !== form._id
+            a.id_periodo  === parseInt(filtro.periodo_id) &&
+            a.id_jornada  === parseInt(filtro.jornada_id) &&
+            a.id_docente  !== parseInt(filtro.docente_id)
+        )}
         );
+        console.log("Conflicto al seleccionar grupo:", conflict);
         setConflictoGrupo(conflict ?? null);
     };
 
@@ -141,6 +155,8 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                 hora_inicio:   formatTimeForApi(modal.inicio),
                 hora_fin:      formatTimeForApi(modal.fin),
                 id_asignatura: parseInt(form.asignatura_id),
+                id_periodo:    parseInt(filtro.periodo_id),
+                id_jornada:    parseInt(filtro.jornada_id)
             };
 
             if (form._id) {
@@ -288,91 +304,14 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
 
                     {/* Tabla responsive con scroll horizontal en móvil */}
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse" style={{ minWidth: "600px" }}>
-                            <thead>
-                                <tr className="border-b border-neutral-100">
-                                    <th className="px-4 py-3 text-xs font-medium text-neutral-500 text-left border-r border-neutral-100 w-20 sticky left-0 bg-white z-10">
-                                        Hora
-                                    </th>
-                                    {DIAS.map(d => (
-                                        <th key={d} className="px-2 py-2.5 text-center border-r border-neutral-100 last:border-r-0 bg-white min-w-22.5">
-                                            <span className="text-xs font-semibold text-neutral-500 tracking-wide">{d}</span>
-                                            {timeSlots.length > 0 && (
-                                                <div className="flex gap-0.5 mt-1.5 justify-center">
-                                                    {timeSlots.map((s, i) => {
-                                                        const slotDisp = isDisponible(d, s.inicio, s.fin);
-                                                        return (
-                                                            <span
-                                                                key={i}
-                                                                title={`${s.inicio}–${s.fin}`}
-                                                                className={`h-1.5 rounded-full flex-1 max-w-3 transition-colors ${
-                                                                    slotDisp === true
-                                                                        ? "bg-emerald-400"
-                                                                        : slotDisp === false
-                                                                            ? "bg-neutral-200"
-                                                                            : "bg-neutral-100"
-                                                                }`}
-                                                            />
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {timeSlots.map((slot, i) => (
-                                    <tr key={i} className="border-b border-neutral-50 last:border-b-0">
-                                        <td className="px-4 py-2 text-[11px] text-neutral-400 font-mono border-r border-neutral-100 sticky left-0 bg-white z-10 whitespace-nowrap align-middle">
-                                            {slot.inicio}
-                                            <span className="block text-neutral-300">{slot.fin}</span>
-                                        </td>
-                                        {DIAS.map(dia => {
-                                            const asig  = getAsignacionPropia(dia, slot.inicio);
-                                            const asig_ = asignaturas.find(a => a.id === asig?.asignatura_id);
-                                            const disp  = isDisponible(dia, slot.inicio, slot.fin);
-                                            return (
-                                                <td key={dia}
-                                                    onClick={() => handleCellClick(dia, slot)}
-                                                    className={`px-1.5 py-1.5 border-r border-neutral-50 last:border-r-0 align-top ${
-                                                        disp === false ? "cursor-not-allowed" : "cursor-pointer"
-                                                    }`}
-                                                >
-                                                    {asig ? (
-                                                        <div className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-2.5 py-2.5 min-h-15 flex flex-col justify-between transition-all duration-150 shadow-sm hover:shadow-md">
-                                                            <p className="text-[11px] font-semibold leading-tight line-clamp-2">{asig_?.nombre ?? "—"}</p>
-                                                            <div className="mt-1.5 space-y-0.5">
-                                                                <p className="text-[10px] text-neutral-400 truncate">{docenteActual?.nombre ?? "—"}</p>
-                                                                {asig.aula && (
-                                                                    <span className="inline-block text-[9px] bg-neutral-700 text-neutral-300 px-1.5 py-0.5 rounded-full">
-                                                                        Aula {asig.aula}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ) : disp === true ? (
-                                                        <div className="min-h-15 rounded-xl bg-linear-to-br from-emerald-50 to-emerald-100/80 border border-emerald-200 flex items-center justify-center hover:from-emerald-100 hover:to-emerald-200/80 hover:border-emerald-300 hover:shadow-sm transition-all duration-150 group">
-                                                            <span className="w-7 h-7 rounded-full bg-emerald-200/70 group-hover:bg-emerald-300 flex items-center justify-center text-emerald-700 text-base font-bold transition-all duration-150 group-hover:scale-110">
-                                                                +
-                                                            </span>
-                                                        </div>
-                                                    ) : disp === false ? (
-                                                        <div className="min-h-15 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center opacity-40 cursor-not-allowed">
-                                                            <span className="text-neutral-400 text-lg select-none font-light">—</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="min-h-15 rounded-xl border border-dashed border-neutral-200 flex items-center justify-center hover:border-neutral-300 hover:bg-neutral-50/60 transition-all duration-150">
-                                                            <span className="text-neutral-300 text-sm">+</span>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <TableHorario
+                            timeSlots={timeSlots}
+                            isDisponible={isDisponible}
+                            getAsignacionPropia={getAsignacionPropia}
+                            asignaturas={asignaturas}
+                            handleCellClick={handleCellClick}
+                            docenteActual={docenteActual}
+                        />
                     </div>
                 </div>
             )}
@@ -389,7 +328,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                 <h3 className="font-semibold text-neutral-800 mt-0.5 truncate">
                                     {modal.dia} · {modal.inicio}–{modal.fin}
                                 </h3>
-                                <p className="text-xs text-neutral-500 mt-0.5 truncate">{docenteActual?.nombre}</p>
+                                <p className="text-xs text-neutral-500 mt-0.5 truncate">{docenteActual?.primer_nombre} {docenteActual?.primer_apellido}</p>
                             </div>
                             <button
                                 onClick={() => setModal(null)}
@@ -405,12 +344,12 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                 <select className={cx.input} value={form.asignatura_id}
                                     onChange={e => setForm(f => ({ ...f, asignatura_id: e.target.value }))}>
                                     <option value="">Selecciona asignatura</option>
-                                    {asignaturasFiltradas.map(a => (
-                                        <option key={a.id} value={a.id}>{a.nombre} ({a.codigo})</option>
-                                    ))}
+                                    {filtro.programa_id && (asignaturasFiltradas.map(a => (
+                                        <option key={a.id} value={a.id}>{a.nombre}</option>
+                                    )))}
                                 </select>
                                 {!filtro.programa_id && (
-                                    <p className="text-xs text-neutral-400 mt-1">Selecciona un programa en los filtros para acotar.</p>
+                                    <p className="text-xs text-red-400 mt-1">Selecciona un programa en los filtros para acotar.</p>
                                 )}
                             </div>
 
@@ -427,7 +366,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                         const prog = programas.find(p => p.id === g.programa_id);
                                         return (
                                             <option key={g.id} value={g.id}>
-                                                {g.nombre} · Sem. {g.semestre}{prog ? ` (${prog.codigo})` : ""}
+                                                {g.codigo}
                                             </option>
                                         );
                                     })}

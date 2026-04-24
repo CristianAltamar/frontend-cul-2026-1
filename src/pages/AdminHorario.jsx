@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
 import { crearHorario, deleteHorario, getHorarioDocente, updateHorario } from "../services/horarioService.js";
-import { getFacultades, createFacultad, updateFacultad, deleteFacultad } from "../services/facultadService.js";
+
 import { getProgramas, createPrograma, updatePrograma, deletePrograma } from "../services/programaService.js";
 import { getJornadas, createJornada, updateJornada, deleteJornada } from "../services/jornadaService.js";
 import { getPeriodos, createPeriodo, updatePeriodo, deletePeriodo } from "../services/periodoService.js";
@@ -11,11 +11,11 @@ import { getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura } 
 import { getGrupos, createGrupo, updateGrupo, deleteGrupo } from "../services/grupoService.js";
 import { getDocentes } from "../services/userService.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
-import { TabAsignaturas }from "../components/tabHorario/TabAsignatura.jsx";
-import { TabJornadas } from "../components/tabHorario/TabJornada.jsx";
-import { TabPeriodos }  from "../components/tabHorario/TabPeriodo.jsx";
-import { TabGrupos }   from "../components/tabHorario/TabGrupo.jsx";
-import { TabHorario }  from "../components/tabHorario/TabHorario.jsx";
+import { TabAsignaturas }from "../components/horario/TabAsignatura.jsx";
+import { TabJornadas } from "../components/horario/TabJornada.jsx";
+import { TabPeriodos }  from "../components/horario/TabPeriodo.jsx";
+import { TabGrupos }   from "../components/horario/TabGrupo.jsx";
+import { TabHorario }  from "../components/horario/TabHorario.jsx";
 import { createSchedule } from "../utils/schedule.js"; 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -60,7 +60,6 @@ export function AdminHorario() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("horario");
 
-    const [facultades,   setFacultades]   = useState([]);
     const [programas,    setProgramas]    = useState([]);
     const [periodos,     setPeriodos]     = useState([]);
     const [jornadas,     setJornadas]     = useState([]);
@@ -78,8 +77,7 @@ export function AdminHorario() {
 
         const loadData = async () => {
             try {
-                const [f, p, per, j, a, d, g] = await Promise.all([
-                    getFacultades(),
+                const [p, per, j, a, d, g] = await Promise.all([
                     getProgramas(),
                     getPeriodos(),
                     getJornadas(),
@@ -88,7 +86,6 @@ export function AdminHorario() {
                     getGrupos(),
                 ]);
 
-                setFacultades(Array.isArray(f) ? f : []);
                 setProgramas(Array.isArray(p) ? p.map(programa => ({
                     ...programa,
                     facultad_id: programa.id_facultad ?? programa.facultad_id,
@@ -181,7 +178,6 @@ export function AdminHorario() {
                     <TabAsignaturas
                         asignaturas={asignaturas} setAsignaturas={setAsignaturas}
                         programas={programas} setProgramas={setProgramas}
-                        facultades={facultades} setFacultades={setFacultades}
                     />
                 )}
             </div>

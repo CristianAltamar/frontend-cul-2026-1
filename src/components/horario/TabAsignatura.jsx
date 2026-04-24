@@ -1,9 +1,22 @@
 import { AsignaturasSection } from "./AsignaturasSection.jsx";
 import { FacultadesSection } from "./FacultadesSection.jsx";
 import { ProgramasSection } from "./ProgramasSection.jsx";
+import { getFacultades, createFacultad, updateFacultad, deleteFacultad } from "../../services/facultadService.js";
+import { useEffect, useState } from "react";
 
 
-export function TabAsignaturas({ asignaturas, setAsignaturas, programas, setProgramas, facultades, setFacultades }) {
+export function TabAsignaturas({ asignaturas, setAsignaturas, programas, setProgramas }) {
+    const [facultades, setFacultades] = useState([]);
+
+
+    useEffect(() => {
+        const loadFacultades = async () => {
+            const data = await getFacultades();
+            setFacultades(data);
+        };
+        loadFacultades();
+    }, []);
+
     return (
         <div className="space-y-6">
             <details className="group">
