@@ -152,7 +152,7 @@ export const Disponibilidad = () => {
                                             disponibilidad[`${d}-${h}-${scheduleEnd[i]}`]
                                         ).length;
                                         return (
-                                            <th key={d} className="px-2 py-2.5 text-center border-r border-neutral-100 last:border-r-0 bg-white min-w-[72px]">
+                                            <th key={d} className="px-2 py-2.5 text-center border-r border-neutral-100 last:border-r-0 bg-white min-w-18">
                                                 <span className="text-xs font-semibold text-neutral-500 tracking-wide">
                                                     {d.slice(0, 3)}
                                                 </span>
@@ -163,7 +163,7 @@ export const Disponibilidad = () => {
                                                         return (
                                                             <span
                                                                 key={i}
-                                                                className={`h-1.5 rounded-full flex-1 max-w-[6px] transition-colors duration-150 ${
+                                                                className={`h-1.5 rounded-full flex-1 max-w-1.5 transition-colors duration-150 ${
                                                                     disponibilidad[key] ? "bg-emerald-400" : "bg-neutral-200"
                                                                 }`}
                                                             />
@@ -197,13 +197,13 @@ export const Disponibilidad = () => {
                                                     className="px-1 py-1 border-r border-neutral-50 last:border-r-0 cursor-pointer align-top"
                                                 >
                                                     {selected ? (
-                                                        <div className="min-h-[38px] rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm hover:from-emerald-600 hover:to-emerald-700 transition-all duration-150 hover:shadow-md group">
+                                                        <div className="min-h-9.5 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm hover:from-emerald-600 hover:to-emerald-700 transition-all duration-150 hover:shadow-md group">
                                                             <svg className="w-3.5 h-3.5 text-white group-hover:scale-110 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                         </div>
                                                     ) : (
-                                                        <div className="min-h-[38px] rounded-xl border border-dashed border-neutral-200 flex items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/60 transition-all duration-150 group">
+                                                        <div className="min-h-9.5 rounded-xl border border-dashed border-neutral-200 flex items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/60 transition-all duration-150 group">
                                                             <span className="text-neutral-300 group-hover:text-emerald-400 text-sm font-light transition-colors duration-150">+</span>
                                                         </div>
                                                     )}
