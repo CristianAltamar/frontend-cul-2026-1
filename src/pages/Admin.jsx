@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
-
+import { PowerBIReporte } from "../components/PowerBiReporte.jsx";
 export function AdminPanel() {
     const navigate = useNavigate();
 
@@ -48,7 +48,7 @@ export function AdminPanel() {
                         {displayName && <span className="text-neutral-200 hidden sm:block">|</span>}
                         <button
                             onClick={handleLogout}
-                            className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium"
+                            className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium cursor-pointer"
                         >
                         Cerrar sesión
                         </button>
@@ -93,6 +93,10 @@ export function AdminPanel() {
                         </div>
                     </Link>
 
+                </div>
+                <div className="w-full h-7/12">
+                    <h2 className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium pb-4">Dashboard Gestión de Horarios</h2>
+                    <PowerBIReporte/>
                 </div>
             </div>
         </div>
