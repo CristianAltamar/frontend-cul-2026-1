@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { LoadingOverlay } from "../components/LoadingSpinner.jsx";
+import { getDocentes } from "../services/userService.js";
+import { getProgramas } from "../services/programaService.js";
+import { getPeriodos } from "../services/periodoService.js";
+import { getAsignaturas } from "../services/asignaturaService.js";
+import { getGrupos } from "../services/grupoService.js";
+import { getHorarioDocente } from "../services/horarioService.js";
 
 // ── Clases Tailwind reutilizables (mismo sistema de diseño que AdminHorario) ──
 const cx = {
@@ -18,51 +24,6 @@ const cx = {
 // ═════════════════════════════════════════════════════════════════════════════
 // MOCK DATA — eliminar y reemplazar con fetch al backend cuando esté disponible
 // ═════════════════════════════════════════════════════════════════════════════
-
-// TODO: Cargar desde GET /get_docentes?rol=2
-const MOCK_DOCENTES = [
-    { id: 1, nombre: "Carlos Pérez"    },
-    { id: 2, nombre: "Ana González"    },
-    { id: 3, nombre: "Luis Martínez"   },
-    { id: 4, nombre: "María Rodríguez" },
-];
-
-// TODO: Cargar desde GET /get_programas
-const MOCK_PROGRAMAS = [
-    { id: 1, nombre: "Ingeniería de Sistemas",     codigo: "ISI" },
-    { id: 2, nombre: "Ingeniería Civil",           codigo: "ICI" },
-    { id: 3, nombre: "Administración de Empresas", codigo: "ADE" },
-    { id: 4, nombre: "Contaduría Pública",         codigo: "COP" },
-    { id: 5, nombre: "Enfermería",                 codigo: "ENF" },
-];
-
-// TODO: Cargar desde GET /get_periodos
-const MOCK_PERIODOS = [
-    { id: 1, nombre: "2026-1", inicio: "2026-01-15", fin: "2026-06-20" },
-    { id: 2, nombre: "2025-2", inicio: "2025-07-10", fin: "2025-12-05" },
-];
-
-// TODO: Cargar desde GET /get_asignaturas
-const MOCK_ASIGNATURAS = [
-    { id: 1, nombre: "Bases de Datos",         codigo: "BD101",  creditos: 3, programa_id: 1 },
-    { id: 2, nombre: "Algoritmos",             codigo: "ALG102", creditos: 4, programa_id: 1 },
-    { id: 3, nombre: "Cálculo I",              codigo: "CAL101", creditos: 4, programa_id: 1 },
-    { id: 4, nombre: "Contabilidad I",         codigo: "CON101", creditos: 3, programa_id: 3 },
-    { id: 5, nombre: "Costos",                 codigo: "COS201", creditos: 3, programa_id: 4 },
-    { id: 6, nombre: "Anatomía",               codigo: "ANA101", creditos: 4, programa_id: 5 },
-    { id: 7, nombre: "Estructuras de Datos",   codigo: "ED201",  creditos: 3, programa_id: 1 },
-    { id: 8, nombre: "Ingeniería de Software", codigo: "IS301",  creditos: 4, programa_id: 1 },
-];
-
-// TODO: Cargar desde GET /get_grupos
-const MOCK_GRUPOS = [
-    { id: 1, nombre: "Grupo 01", semestre: 1, programa_id: 1 },
-    { id: 2, nombre: "Grupo 02", semestre: 1, programa_id: 1 },
-    { id: 3, nombre: "Grupo 01", semestre: 2, programa_id: 1 },
-    { id: 5, nombre: "Grupo 01", semestre: 1, programa_id: 2 },
-    { id: 7, nombre: "Grupo 01", semestre: 1, programa_id: 3 },
-    { id: 9, nombre: "Grupo 01", semestre: 1, programa_id: 5 },
-];
 
 // TODO: Cargar desde GET /get_asignaciones_horario
 // Estructura: { id, docente_id, programa_id, asignatura_id, grupo_id,
@@ -101,7 +62,7 @@ export function AdminReportes() {
 
     // ── Filtros del reporte ────────────────────────────────────────────────────
     const [filtro, setFiltro] = useState({
-        docente_id:   "",
+        id:"",
         programa_id:  "",
         fecha_inicio: "",
         fecha_fin:    "",
@@ -111,6 +72,12 @@ export function AdminReportes() {
     const [loading,    setLoading]    = useState(false);
     const [resultados, setResultados] = useState(null); // null = sin buscar aún
     const [error,      setError]      = useState("");
+    const [docentes,    setDocentes]    = useState([]);   // para el filtro de docentes
+    const [programas,    setProgramas]    = useState([]);   // para el filtro de programas
+    const [periodos,     setPeriodos]     = useState([]);   // para mostrar nombres de periodos en resultados
+    const [asignaturas, setAsignaturas] = useState([]);
+    const [grupos, setGrupos] = useState([]);
+    const [horarios, setHorarios] = useState([]);
 
     // ── Auth: solo admins (rol 1) ─────────────────────────────────────────────
     useEffect(() => {
@@ -118,21 +85,67 @@ export function AdminReportes() {
         if (!token) { navigate("/login"); return; }
         const decoded = decodeToken(token);
         if (!decoded || decoded.rol !== 1) { navigate("/login"); return; }
+
+        // Cargar docentes para el filtro (rol 2)
+        const loadDocentes = async () => {
+            try {
+                const data = await getDocentes();
+                setDocentes(data);
+            } catch (err) {
+                console.error("Error al cargar docentes:", err);
+            }
+        };
+        loadDocentes();
+
+        //Cargar programas
+        const loadProgramas = async () => {
+            try {
+                const data = await getProgramas();
+                setProgramas(data);
+            } catch (err) {
+                console.error("Error al cargar programas:", err);
+            }
+        };
+        loadProgramas();
+
+        // Cargar periodos para mostrar nombres en resultados
+        const loadPeriodos = async () => {
+            try {
+                const data = await getPeriodos();
+                setPeriodos(data);
+            } catch (err) {
+                console.error("Error al cargar periodos:", err);
+            }
+        };
+        loadPeriodos();
+
+        // Cargar grupos para mostrar nombres en resultados
+        const loadGrupos = async () => {
+            try {
+                const data = await getGrupos();
+                setGrupos(data);
+            } catch (err) {
+                console.error("Error al cargar grupos:", err);
+            }
+        };
+        loadGrupos();
     }, []);
 
-    // ── Programas disponibles para el docente seleccionado ────────────────────
-    // Solo muestra programas en los que el docente tiene clases asignadas.
-    // TODO: Reemplazar con GET /get_programas_docente/{docente_id}
-    const programasDocente = filtro.docente_id
-        ? MOCK_PROGRAMAS.filter(p =>
-              MOCK_ASIGNACIONES.some(
-                  a => a.docente_id === parseInt(filtro.docente_id) && a.programa_id === p.id
-              )
-          )
-        : [];
+    useEffect(() => {
+        // Cargar asignaturas para mostrar nombres y códigos en resultados
+        const loadAsignaturas = async () => {
+            try {
+                const data = await getAsignaturas(filtro.programa_id);
+                setAsignaturas(data);
+            } catch (err) {
+                console.error("Error al cargar asignaturas:", err);
+            }
+        };
+        loadAsignaturas();
+    }, [filtro.programa_id]);
 
     const filtersReady =
-        filtro.docente_id &&
+        filtro.id &&
         filtro.programa_id &&
         filtro.fecha_inicio &&
         filtro.fecha_fin &&
@@ -163,23 +176,23 @@ export function AdminReportes() {
             await new Promise(r => setTimeout(r, 700)); // simular latencia de red
 
             // Periodos que se solapan con el rango de fechas seleccionado
-            const periodosFiltrados = MOCK_PERIODOS.filter(p =>
-                rangesOverlap(filtro.fecha_inicio, filtro.fecha_fin, p.inicio, p.fin)
+            const periodosFiltrados = periodos.filter(p =>
+                rangesOverlap(filtro.fecha_inicio, filtro.fecha_fin, p.fecha_inicio, p.fecha_fin)
             );
             const periodoIds = periodosFiltrados.map(p => p.id);
 
             // Asignaciones del docente en el programa, dentro de esos periodos
             const asignacionesFiltradas = MOCK_ASIGNACIONES.filter(a =>
-                a.docente_id  === parseInt(filtro.docente_id)  &&
+                a.docente_id  === parseInt(filtro.id)  &&
                 a.programa_id === parseInt(filtro.programa_id) &&
                 periodoIds.includes(a.periodo_id)
             );
 
             // Enriquecer cada asignación con sus datos relacionados
             const clasesEnriquecidas = asignacionesFiltradas.map(a => {
-                const asignatura = MOCK_ASIGNATURAS.find(s => s.id === a.asignatura_id);
-                const grupo      = MOCK_GRUPOS.find(g => g.id === a.grupo_id);
-                const periodo    = MOCK_PERIODOS.find(p => p.id === a.periodo_id);
+                const asignatura = asignaturas.find(s => s.id === a.asignatura_id);
+                const grupo      = grupos.find(g => g.id === a.grupo_id);
+                const periodo    = periodos.find(p => p.id === a.periodo_id);
                 return {
                     ...a,
                     asignatura_nombre:   asignatura?.nombre   ?? "—",
@@ -192,8 +205,8 @@ export function AdminReportes() {
             }).sort((a, b) => (DIA_ORDEN[a.dia] ?? 9) - (DIA_ORDEN[b.dia] ?? 9));
 
             setResultados({
-                docente:  MOCK_DOCENTES.find(d => d.id === parseInt(filtro.docente_id)),
-                programa: MOCK_PROGRAMAS.find(p => p.id === parseInt(filtro.programa_id)),
+                docente:  docentes.find(d => d.id === parseInt(filtro.id)),
+                programa: programas.find(p => p.id === parseInt(filtro.programa_id)),
                 periodos: periodosFiltrados,
                 clases:   clasesEnriquecidas,
             });
@@ -205,7 +218,7 @@ export function AdminReportes() {
     };
 
     const handleLimpiar = () => {
-        setFiltro({ docente_id: "", programa_id: "", fecha_inicio: "", fecha_fin: "" });
+        setFiltro({ id: "", programa_id: "", fecha_inicio: "", fecha_fin: "" });
         setResultados(null);
         setError("");
     };
@@ -255,53 +268,41 @@ export function AdminReportes() {
                             {/* Filtro 1: Docente */}
                             <div>
                                 <label className={cx.label}>Docente</label>
-                                {/* TODO: options desde GET /get_docentes?rol=2 */}
                                 <select
                                     className={cx.input}
-                                    value={filtro.docente_id}
+                                    value={filtro.id}
                                     onChange={e =>
                                         setFiltro(f => ({
                                             ...f,
-                                            docente_id:  e.target.value,
+                                            id:  e.target.value,
                                             programa_id: "", // resetear programa al cambiar docente
                                         }))
                                     }
                                 >
                                     <option value="">Selecciona docente</option>
-                                    {MOCK_DOCENTES.map(d => (
-                                        <option key={d.id} value={d.id}>{d.nombre}</option>
+                                    {docentes.map(d => (
+                                        <option key={d.id} value={d.id}>{d.primer_nombre} {d.primer_apellido}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* Filtro 2: Programa — solo programas con clases asignadas al docente */}
+                            {/* Filtro 2: Programa */}
                             <div>
                                 <label className={cx.label}>Programa académico</label>
-                                {/* TODO: options desde GET /get_programas_docente/{docente_id} */}
                                 <select
                                     className={cx.input}
                                     value={filtro.programa_id}
                                     onChange={e => setFiltro(f => ({ ...f, programa_id: e.target.value }))}
-                                    disabled={!filtro.docente_id}
                                 >
                                     <option value="">
-                                        {filtro.docente_id
-                                            ? programasDocente.length > 0
-                                                ? "Selecciona programa"
-                                                : "Sin programas asignados"
-                                            : "Primero selecciona un docente"}
+                                        Selecciona programa
                                     </option>
-                                    {programasDocente.map(p => (
+                                    {programas.map(p => (
                                         <option key={p.id} value={p.id}>
                                             {p.nombre} ({p.codigo})
                                         </option>
                                     ))}
                                 </select>
-                                {filtro.docente_id && programasDocente.length === 0 && (
-                                    <p className="text-xs text-amber-600 mt-1">
-                                        Este docente no tiene clases asignadas en ningún programa.
-                                    </p>
-                                )}
                             </div>
 
                             {/* Filtro 3: Fecha inicio */}
@@ -369,7 +370,7 @@ export function AdminReportes() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-neutral-800">
-                                    {resultados.docente?.nombre}
+                                    {resultados.docente?.primer_nombre} {resultados.docente?.primer_apellido}
                                     <span className="mx-2 text-neutral-300">·</span>
                                     <span className="font-normal text-neutral-500">
                                         {resultados.programa?.nombre}
