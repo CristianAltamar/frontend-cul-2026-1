@@ -69,15 +69,16 @@ export function AdminReportes() {
     });
 
     // ── Estado de la búsqueda ─────────────────────────────────────────────────
-    const [loading,    setLoading]    = useState(false);
-    const [resultados, setResultados] = useState(null); // null = sin buscar aún
-    const [error,      setError]      = useState("");
-    const [docentes,    setDocentes]    = useState([]);   // para el filtro de docentes
-    const [programas,    setProgramas]    = useState([]);   // para el filtro de programas
-    const [periodos,     setPeriodos]     = useState([]);   // para mostrar nombres de periodos en resultados
+    const [loading, setLoading] = useState(false);
+    const [resultados, setResultados] = useState(null);
+    const [error, setError] = useState("");
+    const [docentes, setDocentes] = useState([]);
+    const [programas, setProgramas] = useState([]);
+    const [periodos, setPeriodos] = useState([]);
     const [asignaturas, setAsignaturas] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [horarios, setHorarios] = useState([]);
+    const [horariosDocente, setHorariosDocente] = useState([]);
 
     // ── Auth: solo admins (rol 1) ─────────────────────────────────────────────
     useEffect(() => {
