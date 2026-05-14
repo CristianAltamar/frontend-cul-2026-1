@@ -5,51 +5,15 @@ import { LoadingOverlay } from "../components/LoadingSpinner.jsx";
 import { getDocentes } from "../services/userService.js";
 import { getProgramas } from "../services/programaService.js";
 import { getPeriodos } from "../services/periodoService.js";
-import { getAsignaturas } from "../services/asignaturaService.js";
 import { getGrupos } from "../services/grupoService.js";
 import { getHorarioDocente } from "../services/horarioService.js";
+import { cx } from "./AdminHorario.jsx"; // Reutilizamos las clases Tailwind de AdminHorario
+import { useReport } from "../hooks/useReport.jsx";
+import { PanelFiltros } from "../components/adminReportes/PanelFiltros.jsx";
+import { Error } from "../components/Error.jsx";
+import { Resultado } from "../components/adminReportes/Resultado.jsx";
+import doc from "../assets/doc.svg";
 
-// ── Clases Tailwind reutilizables (mismo sistema de diseño que AdminHorario) ──
-const cx = {
-    input:        "w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 text-sm text-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed",
-    label:        "block text-xs font-medium text-neutral-600 mb-1",
-    btnPrimary:   "px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-neutral-800 active:bg-neutral-900 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed",
-    btnSecondary: "px-4 py-2 bg-white text-neutral-700 border border-neutral-200 text-sm rounded-lg hover:bg-neutral-50 transition-colors font-medium",
-    card:         "bg-white rounded-2xl border border-neutral-100 shadow-sm",
-    badge:        "px-2 py-0.5 rounded-full text-xs font-medium",
-    th:           "px-5 py-3.5 text-xs font-medium text-neutral-500 uppercase tracking-wider text-left",
-    td:           "px-5 py-3.5 text-sm text-neutral-700",
-};
-
-// ═════════════════════════════════════════════════════════════════════════════
-// MOCK DATA — eliminar y reemplazar con fetch al backend cuando esté disponible
-// ═════════════════════════════════════════════════════════════════════════════
-
-// TODO: Cargar desde GET /get_asignaciones_horario
-// Estructura: { id, docente_id, programa_id, asignatura_id, grupo_id,
-//               dia, hora_inicio, hora_fin, aula, periodo_id, jornada_id }
-const MOCK_ASIGNACIONES = [
-    { id: 1,  docente_id: 1, programa_id: 1, asignatura_id: 1, grupo_id: 1, dia: "Lunes",     hora_inicio: "07:00", hora_fin: "09:00", aula: "A-101", periodo_id: 1 },
-    { id: 2,  docente_id: 1, programa_id: 1, asignatura_id: 2, grupo_id: 2, dia: "Miércoles", hora_inicio: "07:00", hora_fin: "09:00", aula: "B-202", periodo_id: 1 },
-    { id: 3,  docente_id: 1, programa_id: 1, asignatura_id: 3, grupo_id: 3, dia: "Viernes",   hora_inicio: "07:00", hora_fin: "09:00", aula: "C-303", periodo_id: 1 },
-    { id: 4,  docente_id: 2, programa_id: 3, asignatura_id: 4, grupo_id: 7, dia: "Lunes",     hora_inicio: "13:00", hora_fin: "15:00", aula: "D-101", periodo_id: 1 },
-    { id: 5,  docente_id: 2, programa_id: 3, asignatura_id: 4, grupo_id: 7, dia: "Martes",    hora_inicio: "14:00", hora_fin: "16:00", aula: "D-101", periodo_id: 1 },
-    { id: 6,  docente_id: 3, programa_id: 1, asignatura_id: 7, grupo_id: 1, dia: "Lunes",     hora_inicio: "09:00", hora_fin: "11:00", aula: "E-201", periodo_id: 1 },
-    { id: 7,  docente_id: 3, programa_id: 1, asignatura_id: 8, grupo_id: 2, dia: "Miércoles", hora_inicio: "09:00", hora_fin: "11:00", aula: "E-202", periodo_id: 1 },
-    { id: 8,  docente_id: 3, programa_id: 2, asignatura_id: 3, grupo_id: 5, dia: "Martes",    hora_inicio: "07:00", hora_fin: "09:00", aula: "F-101", periodo_id: 1 },
-    { id: 9,  docente_id: 4, programa_id: 5, asignatura_id: 6, grupo_id: 9, dia: "Lunes",     hora_inicio: "18:00", hora_fin: "20:00", aula: "G-101", periodo_id: 1 },
-    { id: 10, docente_id: 4, programa_id: 5, asignatura_id: 6, grupo_id: 9, dia: "Jueves",    hora_inicio: "18:00", hora_fin: "20:00", aula: "G-101", periodo_id: 1 },
-    { id: 11, docente_id: 1, programa_id: 1, asignatura_id: 1, grupo_id: 1, dia: "Lunes",     hora_inicio: "07:00", hora_fin: "09:00", aula: "A-101", periodo_id: 2 },
-    { id: 12, docente_id: 1, programa_id: 1, asignatura_id: 2, grupo_id: 2, dia: "Martes",    hora_inicio: "10:00", hora_fin: "12:00", aula: "B-101", periodo_id: 2 },
-];
-
-// ── Utilidades ─────────────────────────────────────────────────────────────────
-const DIA_ORDEN = { Lunes: 1, Martes: 2, "Miércoles": 3, Jueves: 4, Viernes: 5, Sábado: 6 };
-
-// Verifica si dos rangos de fecha se solapan (string "YYYY-MM-DD")
-function rangesOverlap(s1, e1, s2, e2) {
-    return s1 <= e2 && e1 >= s2;
-}
 
 // Convierte "HH:MM" a minutos totales
 const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
@@ -69,16 +33,14 @@ export function AdminReportes() {
     });
 
     // ── Estado de la búsqueda ─────────────────────────────────────────────────
-    const [loading, setLoading] = useState(false);
-    const [resultados, setResultados] = useState(null);
-    const [error, setError] = useState("");
     const [docentes, setDocentes] = useState([]);
     const [programas, setProgramas] = useState([]);
     const [periodos, setPeriodos] = useState([]);
-    const [asignaturas, setAsignaturas] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [horarios, setHorarios] = useState([]);
     const [horariosDocente, setHorariosDocente] = useState([]);
+
+    const { filtersReady, resultados, loading, error, handleBuscar, Limpiar } = useReport({ filtro, periodos, docentes, programas });
 
     // ── Auth: solo admins (rol 1) ─────────────────────────────────────────────
     useEffect(() => {
@@ -91,7 +53,7 @@ export function AdminReportes() {
         const loadDocentes = async () => {
             try {
                 const data = await getDocentes();
-                setDocentes(data);
+                setDocentes(data.filter(d => d.id_rol === 2));
             } catch (err) {
                 console.error("Error al cargar docentes:", err);
             }
@@ -132,67 +94,14 @@ export function AdminReportes() {
         loadGrupos();
     }, []);
 
-    useEffect(() => {
-        // Cargar asignaturas para mostrar nombres y códigos en resultados
-        const loadAsignaturas = async () => {
-            try {
-                const data = await getAsignaturas(filtro.programa_id);
-                setAsignaturas(data);
-            } catch (err) {
-                console.error("Error al cargar asignaturas:", err);
-            }
-        };
-        loadAsignaturas();
-    }, [filtro.programa_id]);
-
-    const filtersReady =
-        filtro.id &&
-        filtro.programa_id &&
-        filtro.fecha_inicio &&
-        filtro.fecha_fin &&
-        filtro.fecha_inicio <= filtro.fecha_fin;
-
-    // ── Generar reporte ───────────────────────────────────────────────────────
-    const handleBuscar = async () => {
-        if (!filtersReady) return;
-        setLoading(true);
-        setError("");
-
-        try {
-            // Periodos que se solapan con el rango de fechas seleccionado
-            const periodosFiltrados = periodos.filter(p =>
-                rangesOverlap(filtro.fecha_inicio, filtro.fecha_fin, p.fecha_inicio, p.fecha_fin)
-            );
-            const periodoIds = periodosFiltrados.map(p => p.id);
-
-            const horariosDocente = await getHorarioDocente(filtro.id, periodoIds[0], filtro.programa_id);
-            setHorariosDocente(horariosDocente.sort((a, b) => (a.dia_semana ?? 9) - (b.dia_semana ?? 9)));
-
-            // Asignaciones del docente en el programa, dentro de esos periodos
-            const asignacionesFiltradas = MOCK_ASIGNACIONES.filter(a =>
-                a.docente_id  === parseInt(filtro.id)  &&
-                a.programa_id === parseInt(filtro.programa_id) &&
-                periodoIds.includes(a.periodo_id)
-            );
-
-            setResultados({
-                docente:  docentes.find(d => d.id === parseInt(filtro.id)),
-                programa: programas.find(p => p.id === parseInt(filtro.programa_id)),
-                periodos: periodosFiltrados,
-                clases:   horariosDocente,
-            });
-            console.log("Asignaciones filtradas:", horariosDocente);
-        } catch {
-            setError("Error al generar el reporte. Intenta nuevamente.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleLimpiar = () => {
-        setFiltro({ id: "", programa_id: "", fecha_inicio: "", fecha_fin: "" });
-        setResultados(null);
-        setError("");
+        setFiltro({
+            id:"",
+            programa_id: "",
+            fecha_inicio: "",
+            fecha_fin: ""
+        });
+        Limpiar();
     };
 
     // ── Stats resumen del reporte ─────────────────────────────────────────────
@@ -226,307 +135,27 @@ export function AdminReportes() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                {/* ══ PANEL DE FILTROS ══════════════════════════════════════════ */}
-                <div className={cx.card}>
-                    <div className="px-5 py-4 border-b border-neutral-100">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                            Parámetros del reporte
-                        </p>
-                    </div>
-
-                    <div className="p-5 space-y-5">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                            {/* Filtro 1: Docente */}
-                            <div>
-                                <label className={cx.label}>Docente</label>
-                                <select
-                                    className={cx.input}
-                                    value={filtro.id}
-                                    onChange={e =>
-                                        setFiltro(f => ({
-                                            ...f,
-                                            id:  e.target.value,
-                                            programa_id: "", // resetear programa al cambiar docente
-                                        }))
-                                    }
-                                >
-                                    <option value="">Selecciona docente</option>
-                                    {docentes.map(d => (
-                                        <option key={d.id} value={d.id}>{d.primer_nombre} {d.primer_apellido}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Filtro 2: Programa */}
-                            <div>
-                                <label className={cx.label}>Programa académico</label>
-                                <select
-                                    className={cx.input}
-                                    value={filtro.programa_id}
-                                    onChange={e => setFiltro(f => ({ ...f, programa_id: e.target.value }))}
-                                >
-                                    <option value="">
-                                        Selecciona programa
-                                    </option>
-                                    {programas.map(p => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.nombre} ({p.codigo})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Filtro 3: Fecha inicio */}
-                            <div>
-                                <label className={cx.label}>Fecha inicio</label>
-                                <input
-                                    type="date"
-                                    className={cx.input}
-                                    value={filtro.fecha_inicio}
-                                    onChange={e => setFiltro(f => ({ ...f, fecha_inicio: e.target.value }))}
-                                />
-                            </div>
-
-                            {/* Filtro 4: Fecha fin */}
-                            <div>
-                                <label className={cx.label}>Fecha fin</label>
-                                <input
-                                    type="date"
-                                    className={cx.input}
-                                    value={filtro.fecha_fin}
-                                    min={filtro.fecha_inicio || undefined}
-                                    onChange={e => setFiltro(f => ({ ...f, fecha_fin: e.target.value }))}
-                                />
-                                {filtro.fecha_inicio && filtro.fecha_fin && filtro.fecha_inicio > filtro.fecha_fin && (
-                                    <p className="text-xs text-red-600 mt-1">
-                                        La fecha fin debe ser posterior a la fecha inicio.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Acciones */}
-                        <div className="flex flex-wrap gap-2 pt-1">
-                            <button
-                                onClick={handleBuscar}
-                                disabled={!filtersReady || loading}
-                                className={cx.btnPrimary}
-                            >
-                                Generar reporte
-                            </button>
-                            {(resultados !== null || error) && (
-                                <button onClick={handleLimpiar} className={cx.btnSecondary}>
-                                    Limpiar
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                <PanelFiltros
+                    filtro={filtro}
+                    setFiltro={setFiltro}
+                    docentes={docentes}
+                    programas={programas}
+                    handleBuscar={handleBuscar}
+                    handleLimpiar={handleLimpiar}
+                    filtersReady={filtersReady}
+                    loading={loading}
+                    resultados={resultados}
+                    error={error}
+                />
 
                 {/* ══ BANNER DE ERROR ══════════════════════════════════════════ */}
                 {error && (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-                        <span className="w-5 h-5 rounded-full bg-red-100 border border-red-300 flex items-center justify-center shrink-0 font-bold text-xs">
-                            ✕
-                        </span>
-                        {error}
-                    </div>
+                    <Error message={error} />
                 )}
 
                 {/* ══ RESULTADOS ═══════════════════════════════════════════════ */}
                 {resultados && !loading && (
-                    <div className="space-y-5">
-
-                        {/* Encabezado del reporte generado */}
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                            <div>
-                                <h2 className="text-lg font-semibold text-neutral-800">
-                                    {resultados.docente?.primer_nombre} {resultados.docente?.primer_apellido}
-                                    <span className="mx-2 text-neutral-300">·</span>
-                                    <span className="font-normal text-neutral-500">
-                                        {resultados.asignatura}
-                                    </span>
-                                </h2>
-                                <p className="text-sm text-neutral-400 mt-0.5">
-                                    {filtro.fecha_inicio} → {filtro.fecha_fin}
-                                    {resultados.periodos.length > 0 && (
-                                        <span className="ml-2">
-                                            · {resultados.periodos.map(p => p.nombre).join(", ")}
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-                            {/* TODO: Botón de exportación — conectar con backend o librería PDF */}
-                            {/* <button className={cx.btnSecondary}>Exportar PDF</button> */}
-                        </div>
-
-                        {/* ── Tarjetas de resumen ── */}
-                        {stats && (
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-                                <div className={`${cx.card} p-5`}>
-                                    <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">
-                                        Clases asignadas
-                                    </p>
-                                    <p className="text-3xl font-bold text-neutral-900 mt-2 tabular-nums">
-                                        {stats.totalClases}
-                                    </p>
-                                    <p className="text-xs text-neutral-400 mt-1">por semana</p>
-                                </div>
-
-                                <div className={`${cx.card} p-5`}>
-                                    <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">
-                                        Horas semanales
-                                    </p>
-                                    <p className="text-3xl font-bold text-neutral-900 mt-2 tabular-nums">
-                                        {Math.floor(stats.totalMinutos / 60)}
-                                        <span className="text-lg text-neutral-500">h</span>
-                                        {stats.totalMinutos % 60 > 0 && (
-                                            <span className="text-lg text-neutral-500">
-                                                {stats.totalMinutos % 60}min
-                                            </span>
-                                        )}
-                                    </p>
-                                    <p className="text-xs text-neutral-400 mt-1">tiempo en clase</p>
-                                </div>
-
-                                <div className={`${cx.card} p-5`}>
-                                    <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">
-                                        Días activos
-                                    </p>
-                                    <p className="text-3xl font-bold text-neutral-900 mt-2 tabular-nums">
-                                        {stats.diasActivos.length}
-                                    </p>
-                                    <p className="text-xs text-neutral-400 mt-1 truncate">
-                                        {stats.diasActivos.join(", ")}
-                                    </p>
-                                </div>
-
-                                <div className={`${cx.card} p-5`}>
-                                    <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">
-                                        Periodos
-                                    </p>
-                                    <p className="text-3xl font-bold text-neutral-900 mt-2 tabular-nums">
-                                        {stats.periodos}
-                                    </p>
-                                    <p className="text-xs text-neutral-400 mt-1 truncate">
-                                        {resultados.periodos.map(p => p.nombre).join(", ") || "—"}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ── Sin resultados ── */}
-                        {resultados.clases.length === 0 ? (
-                            <div className={`${cx.card} py-16 flex flex-col items-center justify-center gap-3 px-4 text-center`}>
-                                <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 text-xl">
-                                    ◫
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-neutral-600">Sin clases en ese rango</p>
-                                    <p className="text-sm text-neutral-400 mt-1 max-w-xs">
-                                        No se encontraron clases asignadas para este docente en el programa y
-                                        fechas seleccionadas.
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                {/* ── Tabla de detalle — visible en sm+ ── */}
-                                <div className={`${cx.card} overflow-hidden hidden sm:block`}>
-                                    <div className="px-5 py-4 border-b border-neutral-100">
-                                        <h3 className="font-semibold text-neutral-800">Detalle de clases</h3>
-                                        <p className="text-xs text-neutral-400 mt-0.5">
-                                            {resultados.clases.length} clase{resultados.clases.length !== 1 ? "s" : ""} encontrada{resultados.clases.length !== 1 ? "s" : ""}
-                                        </p>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm" style={{ minWidth: "640px" }}>
-                                            <thead className="bg-neutral-50 border-b border-neutral-100">
-                                                <tr>
-                                                    <th className={cx.th}>Día</th>
-                                                    <th className={cx.th}>Horario</th>
-                                                    <th className={cx.th}>Asignatura</th>
-                                                    <th className={cx.th}>Grupo</th>
-                                                    <th className={cx.th}>Período</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-neutral-50">
-                                                {resultados.clases.map(clase => (
-                                                    <tr
-                                                        key={clase.id}
-                                                        className="hover:bg-neutral-50/50 transition-colors"
-                                                    >
-                                                        <td className={`${cx.td} font-medium text-neutral-800`}>
-                                                            {clase.dia_semana}
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            <span className="font-mono text-xs text-neutral-600 whitespace-nowrap">
-                                                                {clase.hora_inicio}–{clase.hora_fin}
-                                                            </span>
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            {clase.asignatura}
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            <p className="text-neutral-700">{clase.codigo_grupo}</p>
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            <span className={`${cx.badge} bg-neutral-900 text-white`}>
-                                                                {clase.periodo}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {/* ── Cards de detalle — visibles solo en mobile ── */}
-                                <div className="sm:hidden space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="font-semibold text-neutral-800">Detalle de clases</h3>
-                                        <span className="text-xs text-neutral-400">
-                                            {resultados.clases.length} clase{resultados.clases.length !== 1 ? "s" : ""}
-                                        </span>
-                                    </div>
-
-                                    {resultados.clases.map(clase => (
-                                        <div key={clase.id} className={`${cx.card} p-4 space-y-3`}>
-
-                                            {/* Encabezado de card */}
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0">
-                                                    <p className="font-semibold text-neutral-800 truncate">
-                                                        {clase.asignatura}
-                                                    </p>
-                                                </div>
-                                                <span className={`${cx.badge} bg-neutral-900 text-white shrink-0`}>
-                                                    {clase.periodo}
-                                                </span>
-                                            </div>
-
-                                            {/* Día y horario */}
-                                            <div className="flex items-center gap-1.5 text-sm text-neutral-600">
-                                                <span className="font-medium">{clase.dia_semana}</span>
-                                                <span className="text-neutral-300">·</span>
-                                                <span className="font-mono text-xs">{clase.hora_inicio}–{clase.hora_fin}</span>
-                                            </div>
-
-                                            {/* Badges: grupo y aula */}
-                                            <div className="flex flex-wrap gap-2">
-                                                <span className={`${cx.badge} bg-neutral-100 text-neutral-600`}>
-                                                    {clase.codigo_grupo}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <Resultado resultados={resultados} filtro={filtro} stats={stats} />
                 )}
 
                 {/* ══ ESTADO VACÍO INICIAL (sin búsqueda) ══════════════════════ */}
