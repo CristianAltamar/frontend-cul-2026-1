@@ -159,28 +159,14 @@ export function AdminReportes() {
         setError("");
 
         try {
-            // TODO: Reemplazar con llamada real al backend
-            // Endpoint sugerido: GET /get_reporte_clases
-            // Query params: docente_id, programa_id, fecha_inicio, fecha_fin
-            // Estructura esperada del response:
-            // {
-            //   docente:  { id, nombre },
-            //   programa: { id, nombre, codigo },
-            //   periodos: [{ id, nombre, inicio, fin }],
-            //   clases: [{
-            //     id, periodo_id, periodo_nombre, dia, hora_inicio, hora_fin,
-            //     asignatura_id, asignatura_nombre, asignatura_codigo, asignatura_creditos,
-            //     grupo_id, grupo_nombre, grupo_semestre, aula
-            //   }]
-            // }
-
-            await new Promise(r => setTimeout(r, 700)); // simular latencia de red
-
             // Periodos que se solapan con el rango de fechas seleccionado
             const periodosFiltrados = periodos.filter(p =>
                 rangesOverlap(filtro.fecha_inicio, filtro.fecha_fin, p.fecha_inicio, p.fecha_fin)
             );
             const periodoIds = periodosFiltrados.map(p => p.id);
+
+            const horariosDocente = await getHorarioDocente(filtro.id, periodoIds[0], filtro.programa_id);
+            setHorariosDocente(horariosDocente.sort((a, b) => (a.dia_semana ?? 9) - (b.dia_semana ?? 9)));
 
             // Asignaciones del docente en el programa, dentro de esos periodos
             const asignacionesFiltradas = MOCK_ASIGNACIONES.filter(a =>
@@ -189,28 +175,13 @@ export function AdminReportes() {
                 periodoIds.includes(a.periodo_id)
             );
 
-            // Enriquecer cada asignación con sus datos relacionados
-            const clasesEnriquecidas = asignacionesFiltradas.map(a => {
-                const asignatura = asignaturas.find(s => s.id === a.asignatura_id);
-                const grupo      = grupos.find(g => g.id === a.grupo_id);
-                const periodo    = periodos.find(p => p.id === a.periodo_id);
-                return {
-                    ...a,
-                    asignatura_nombre:   asignatura?.nombre   ?? "—",
-                    asignatura_codigo:   asignatura?.codigo   ?? "—",
-                    asignatura_creditos: asignatura?.creditos ?? 0,
-                    grupo_nombre:        grupo?.nombre        ?? "—",
-                    grupo_semestre:      grupo?.semestre      ?? "—",
-                    periodo_nombre:      periodo?.nombre      ?? "—",
-                };
-            }).sort((a, b) => (DIA_ORDEN[a.dia] ?? 9) - (DIA_ORDEN[b.dia] ?? 9));
-
             setResultados({
                 docente:  docentes.find(d => d.id === parseInt(filtro.id)),
                 programa: programas.find(p => p.id === parseInt(filtro.programa_id)),
                 periodos: periodosFiltrados,
-                clases:   clasesEnriquecidas,
+                clases:   horariosDocente,
             });
+            console.log("Asignaciones filtradas:", horariosDocente);
         } catch {
             setError("Error al generar el reporte. Intenta nuevamente.");
         } finally {
@@ -230,7 +201,7 @@ export function AdminReportes() {
         totalMinutos: resultados.clases.reduce(
             (sum, c) => sum + (toMin(c.hora_fin) - toMin(c.hora_inicio)), 0
         ),
-        diasActivos: [...new Set(resultados.clases.map(c => c.dia))],
+        diasActivos: [...new Set(resultados.clases.map(c => c.dia_semana))],
         periodos:    resultados.periodos.length,
     } : null;
 
@@ -374,7 +345,7 @@ export function AdminReportes() {
                                     {resultados.docente?.primer_nombre} {resultados.docente?.primer_apellido}
                                     <span className="mx-2 text-neutral-300">·</span>
                                     <span className="font-normal text-neutral-500">
-                                        {resultados.programa?.nombre}
+                                        {resultados.asignatura}
                                     </span>
                                 </h2>
                                 <p className="text-sm text-neutral-400 mt-0.5">
@@ -478,9 +449,7 @@ export function AdminReportes() {
                                                     <th className={cx.th}>Horario</th>
                                                     <th className={cx.th}>Asignatura</th>
                                                     <th className={cx.th}>Grupo</th>
-                                                    <th className={cx.th}>Aula</th>
                                                     <th className={cx.th}>Período</th>
-                                                    <th className={cx.th}>Créditos</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-neutral-50">
@@ -490,7 +459,7 @@ export function AdminReportes() {
                                                         className="hover:bg-neutral-50/50 transition-colors"
                                                     >
                                                         <td className={`${cx.td} font-medium text-neutral-800`}>
-                                                            {clase.dia}
+                                                            {clase.dia_semana}
                                                         </td>
                                                         <td className={cx.td}>
                                                             <span className="font-mono text-xs text-neutral-600 whitespace-nowrap">
@@ -498,36 +467,14 @@ export function AdminReportes() {
                                                             </span>
                                                         </td>
                                                         <td className={cx.td}>
-                                                            <p className="font-medium text-neutral-800">
-                                                                {clase.asignatura_nombre}
-                                                            </p>
-                                                            <p className="text-xs text-neutral-400 font-mono mt-0.5">
-                                                                {clase.asignatura_codigo}
-                                                            </p>
+                                                            {clase.asignatura}
                                                         </td>
                                                         <td className={cx.td}>
-                                                            <p className="text-neutral-700">{clase.grupo_nombre}</p>
-                                                            <p className="text-xs text-neutral-400 mt-0.5">
-                                                                Sem. {clase.grupo_semestre}
-                                                            </p>
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            {clase.aula ? (
-                                                                <span className={`${cx.badge} bg-neutral-100 text-neutral-600`}>
-                                                                    {clase.aula}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-neutral-300">—</span>
-                                                            )}
+                                                            <p className="text-neutral-700">{clase.codigo_grupo}</p>
                                                         </td>
                                                         <td className={cx.td}>
                                                             <span className={`${cx.badge} bg-neutral-900 text-white`}>
-                                                                {clase.periodo_nombre}
-                                                            </span>
-                                                        </td>
-                                                        <td className={cx.td}>
-                                                            <span className={`${cx.badge} bg-neutral-100 text-neutral-600`}>
-                                                                {clase.asignatura_creditos} cr
+                                                                {clase.periodo}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -553,20 +500,17 @@ export function AdminReportes() {
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
                                                     <p className="font-semibold text-neutral-800 truncate">
-                                                        {clase.asignatura_nombre}
-                                                    </p>
-                                                    <p className="text-xs text-neutral-400 font-mono mt-0.5">
-                                                        {clase.asignatura_codigo} · {clase.asignatura_creditos} créditos
+                                                        {clase.asignatura}
                                                     </p>
                                                 </div>
                                                 <span className={`${cx.badge} bg-neutral-900 text-white shrink-0`}>
-                                                    {clase.periodo_nombre}
+                                                    {clase.periodo}
                                                 </span>
                                             </div>
 
                                             {/* Día y horario */}
                                             <div className="flex items-center gap-1.5 text-sm text-neutral-600">
-                                                <span className="font-medium">{clase.dia}</span>
+                                                <span className="font-medium">{clase.dia_semana}</span>
                                                 <span className="text-neutral-300">·</span>
                                                 <span className="font-mono text-xs">{clase.hora_inicio}–{clase.hora_fin}</span>
                                             </div>
@@ -574,13 +518,8 @@ export function AdminReportes() {
                                             {/* Badges: grupo y aula */}
                                             <div className="flex flex-wrap gap-2">
                                                 <span className={`${cx.badge} bg-neutral-100 text-neutral-600`}>
-                                                    {clase.grupo_nombre} · Sem. {clase.grupo_semestre}
+                                                    {clase.codigo_grupo}
                                                 </span>
-                                                {clase.aula && (
-                                                    <span className={`${cx.badge} bg-neutral-50 text-neutral-500 border border-neutral-100`}>
-                                                        Aula {clase.aula}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     ))}

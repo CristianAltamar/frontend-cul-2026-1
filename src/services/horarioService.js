@@ -1,7 +1,7 @@
 import api from "../api/axios";
 
-export const getHorarioDocente = async (id_docente, id_periodo) => {
-    const response = await api.get(`/get_horario_docente/${id_docente}?id_periodo=${id_periodo}`);
+export const getHorarioDocente = async (id_docente, id_periodo, id_programa=null) => {
+    const response = await api.get(`/get_horario_docente/${id_docente}?id_periodo=${id_periodo}${id_programa ? `&id_programa=${id_programa}` : ''}`);
     return response.data.resultado;
 };
 
