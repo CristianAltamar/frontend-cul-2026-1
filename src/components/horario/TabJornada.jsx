@@ -2,8 +2,10 @@ import { useState } from "react";
 import { createJornada, updateJornada, deleteJornada } from "../../services/jornadaService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { formatTimeForApi } from "../../utils/schedule.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
-export function TabJornadas({ jornadas, setJornadas }) {
+export function TabJornadas() {
+    const { jornadas, setJornadas } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", hora_inicio: "", hora_fin: "" });
     const [editId,  setEditId]  = useState(null);

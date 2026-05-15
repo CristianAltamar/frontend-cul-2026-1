@@ -3,9 +3,11 @@ import { FacultadesSection } from "./FacultadesSection.jsx";
 import { ProgramasSection } from "./ProgramasSection.jsx";
 import { getFacultades, createFacultad, updateFacultad, deleteFacultad } from "../../services/facultadService.js";
 import { useEffect, useState } from "react";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 
-export function TabAsignaturas({ asignaturas, setAsignaturas, programas, setProgramas }) {
+export function TabAsignaturas() {
+    const { asignaturas, setAsignaturas, programas, setProgramas } = useAdminHorarioStore();
     const [facultades, setFacultades] = useState([]);
 
 

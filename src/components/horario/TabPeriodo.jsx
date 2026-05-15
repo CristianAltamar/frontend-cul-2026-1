@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { createPeriodo, updatePeriodo, deletePeriodo } from "../../services/periodoService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 
-export function TabPeriodos({ periodos, setPeriodos }) {
+export function TabPeriodos() {
+    const { periodos, setPeriodos } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", inicio: "", fin: "", activo: false });
     const [editId,  setEditId]  = useState(null);

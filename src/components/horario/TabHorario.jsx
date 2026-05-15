@@ -6,10 +6,17 @@ import { createSchedule, formatTimeForApi } from "../../utils/schedule.js";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
 import { Slots } from "./tabHorario/Slots.jsx";
 import { TableHorario } from "./tabHorario/TableHorario.jsx";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, grupos, asignaciones, setAsignaciones }) {
+export function TabHorario() {
+    const { filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, grupos, asignaciones, setAsignaciones } = useAdminHorarioStore();
+
+    useEffect(() => {
+        console.log(filtro);
+    }, [filtro]);
+
     const [modal,   setModal]   = useState(null);
     const [form,    setForm]    = useState({ asignatura_id: "", grupo_id: "", aula: "", _id: null });
     const [saving,  setSaving]  = useState(false);
@@ -207,7 +214,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                     <div>
                         <label className={cx.label}>Periodo / Semestre</label>
                         <select className={cx.input} value={filtro.periodo_id}
-                            onChange={e => setFiltro(f => ({ ...f, periodo_id: e.target.value }))}>
+                            onChange={e => setFiltro(({periodo_id: e.target.value}))}>
                             <option value="">Selecciona periodo</option>
                             {periodos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
@@ -216,7 +223,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                     <div>
                         <label className={cx.label}>Jornada</label>
                         <select className={cx.input} value={filtro.jornada_id}
-                            onChange={e => setFiltro(f => ({ ...f, jornada_id: e.target.value }))}>
+                            onChange={e => setFiltro({jornada_id: e.target.value})}>
                             <option value="">Selecciona jornada</option>
                             {jornadas.map(j => (
                                 <option key={j.id} value={j.id}>{j.nombre} ({j.hora_inicio}–{j.hora_fin})</option>
@@ -227,7 +234,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                     <div>
                         <label className={cx.label}>Docente</label>
                         <select className={cx.input} value={filtro.docente_id}
-                            onChange={e => setFiltro(f => ({ ...f, docente_id: e.target.value }))}>
+                            onChange={e => setFiltro({docente_id: e.target.value})}>
                             <option value="">Selecciona docente</option>
                             {docentes.map(d => <option key={d.id} value={d.id}>{d.primer_nombre} {d.primer_apellido}</option>)}
                         </select>
@@ -236,7 +243,7 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                     <div>
                         <label className={cx.label}>Programa académico</label>
                         <select className={cx.input} value={filtro.programa_id}
-                            onChange={e => setFiltro(f => ({ ...f, programa_id: e.target.value }))}>
+                            onChange={e => setFiltro({programa_id: e.target.value})}>
                             <option value="">Todos los programas</option>
                             {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
@@ -384,14 +391,6 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                 ) : null}
                             </div>
 
-                        </div>
-
-                        {/* Aula */}
-                        <div>
-                            <label className={cx.label}>Aula / Salón</label>
-                            <input className={cx.input} placeholder="Ej: A-201"
-                                value={form.aula}
-                                onChange={e => setForm(f => ({ ...f, aula: e.target.value }))} />
                         </div>
 
                         {/* Acciones */}

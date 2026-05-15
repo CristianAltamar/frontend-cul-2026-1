@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
 import { crearHorario, deleteHorario, getHorarioDocente, updateHorario } from "../services/horarioService.js";
-
 import { getProgramas, createPrograma, updatePrograma, deletePrograma } from "../services/programaService.js";
 import { getJornadas, createJornada, updateJornada, deleteJornada } from "../services/jornadaService.js";
 import { getPeriodos, createPeriodo, updatePeriodo, deletePeriodo } from "../services/periodoService.js";
@@ -17,6 +16,7 @@ import { TabPeriodos }  from "../components/horario/TabPeriodo.jsx";
 import { TabGrupos }   from "../components/horario/TabGrupo.jsx";
 import { TabHorario }  from "../components/horario/TabHorario.jsx";
 import { createSchedule } from "../utils/schedule.js"; 
+import { useAdminHorarioStore } from "../stores/useAdminHorarioStore.js";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 
@@ -58,16 +58,8 @@ function generateTimeSlots(horaInicio, horaFin, intervalMin = 60) {
 
 export function AdminHorario() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("horario");
 
-    const [programas,    setProgramas]    = useState([]);
-    const [periodos,     setPeriodos]     = useState([]);
-    const [jornadas,     setJornadas]     = useState([]);
-    const [asignaturas,  setAsignaturas]  = useState([]);
-    const [docentes,     setDocentes]     = useState([]);
-    const [grupos,       setGrupos]       = useState([]);
-    const [asignaciones, setAsignaciones] = useState([]);
-    const [filtro, setFiltro] = useState({ periodo_id: "", jornada_id: "", docente_id: "", programa_id: "" });
+    const { loadAllData, setActiveTab, activeTab } = useAdminHorarioStore();
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -75,47 +67,7 @@ export function AdminHorario() {
         const decoded = decodeToken(token);
         if (!decoded || decoded.rol !== 1) { navigate("/login"); return; }
 
-        const loadData = async () => {
-            try {
-                const [p, per, j, a, d, g] = await Promise.all([
-                    getProgramas(),
-                    getPeriodos(),
-                    getJornadas(),
-                    getAsignaturas(),
-                    getDocentes(),
-                    getGrupos(),
-                ]);
-
-                setProgramas(Array.isArray(p) ? p.map(programa => ({
-                    ...programa,
-                    facultad_id: programa.id_facultad ?? programa.facultad_id,
-                })) : []);
-                setPeriodos(Array.isArray(per) ? per.map(periodo => ({
-                    ...periodo,
-                    inicio: periodo.fecha_inicio ?? periodo.inicio,
-                    fin: periodo.fecha_fin ?? periodo.fin,
-                    activo: periodo.activo ?? false,
-                })) : []);
-                setJornadas(Array.isArray(j) ? j : []);
-                setAsignaturas(Array.isArray(a) ? a.map(asignatura => ({
-                    ...asignatura,
-                    programa_id: asignatura.id_programa ?? asignatura.programa_id,
-                    codigo: asignatura.codigo ?? "",
-                    creditos: asignatura.creditos ?? "",
-                })) : []);
-                setDocentes(Array.isArray(d) ? d : []);
-                setGrupos(Array.isArray(g) ? g.map(grupo => ({
-                    ...grupo,
-                    nombre: grupo.codigo_grupo ?? grupo.nombre,
-                    programa_id: grupo.id_programa ?? grupo.programa_id ?? null,
-                    semestre: grupo.semestre ?? null,
-                })) : []);
-            } catch (error) {
-                console.error("Error al cargar los datos iniciales:", error);
-            }
-        };
-
-        loadData();
+        loadAllData();
 
     }, [navigate]);
 
@@ -154,31 +106,19 @@ export function AdminHorario() {
             {/* ── Contenido de tab ── */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
                 {activeTab === "horario" && (
-                    <TabHorario
-                        filtro={filtro} setFiltro={setFiltro}
-                        periodos={periodos} jornadas={jornadas}
-                        programas={programas} asignaturas={asignaturas}
-                        docentes={docentes} grupos={grupos}
-                        asignaciones={asignaciones} setAsignaciones={setAsignaciones}
-                    />
+                    <TabHorario />
                 )}
                 {activeTab === "grupos" && (
-                    <TabGrupos
-                        grupos={grupos} setGrupos={setGrupos}
-                        periodos={periodos} jornadas={jornadas}
-                    />
+                    <TabGrupos />
                 )}
                 {activeTab === "periodos" && (
-                    <TabPeriodos periodos={periodos} setPeriodos={setPeriodos} />
+                    <TabPeriodos />
                 )}
                 {activeTab === "jornadas" && (
-                    <TabJornadas jornadas={jornadas} setJornadas={setJornadas} />
+                    <TabJornadas />
                 )}
                 {activeTab === "asignaturas" && (
-                    <TabAsignaturas
-                        asignaturas={asignaturas} setAsignaturas={setAsignaturas}
-                        programas={programas} setProgramas={setProgramas}
-                    />
+                    <TabAsignaturas />
                 )}
             </div>
         </div>

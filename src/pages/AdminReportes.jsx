@@ -13,6 +13,7 @@ import { PanelFiltros } from "../components/adminReportes/PanelFiltros.jsx";
 import { Error } from "../components/Error.jsx";
 import { Resultado } from "../components/adminReportes/Resultado.jsx";
 import doc from "../assets/doc.svg";
+import { useReportStore } from "../stores/useReportStore.js";
 
 
 // Convierte "HH:MM" a minutos totales
@@ -22,6 +23,7 @@ const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m;
 // COMPONENTE PRINCIPAL
 // ═════════════════════════════════════════════════════════════════════════════
 export function AdminReportes() {
+    const { docentes, setDocentes, programas, setProgramas, periodos, setPeriodos } = useReportStore();
     const navigate = useNavigate();
 
     // ── Filtros del reporte ────────────────────────────────────────────────────
@@ -33,9 +35,6 @@ export function AdminReportes() {
     });
 
     // ── Estado de la búsqueda ─────────────────────────────────────────────────
-    const [docentes, setDocentes] = useState([]);
-    const [programas, setProgramas] = useState([]);
-    const [periodos, setPeriodos] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [horarios, setHorarios] = useState([]);
     const [horariosDocente, setHorariosDocente] = useState([]);
