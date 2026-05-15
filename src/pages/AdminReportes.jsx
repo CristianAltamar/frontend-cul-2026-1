@@ -1,23 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { LoadingOverlay } from "../components/LoadingSpinner.jsx";
-import { getDocentes } from "../services/userService.js";
-import { getProgramas } from "../services/programaService.js";
-import { getPeriodos } from "../services/periodoService.js";
-import { getGrupos } from "../services/grupoService.js";
-import { getHorarioDocente } from "../services/horarioService.js";
-import { cx } from "./AdminHorario.jsx"; // Reutilizamos las clases Tailwind de AdminHorario
-import { useReport } from "../hooks/useReport.jsx";
+import { cx } from "./AdminHorario.jsx";
+import { useReportStore } from "../stores/useReportStore.js";
 import { PanelFiltros } from "../components/adminReportes/PanelFiltros.jsx";
 import { Error } from "../components/Error.jsx";
 import { Resultado } from "../components/adminReportes/Resultado.jsx";
 import doc from "../assets/doc.svg";
 import { useReportStore } from "../stores/useReportStore.js";
 
-
-// Convierte "HH:MM" a minutos totales
-const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 
 // ═════════════════════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
@@ -41,77 +33,15 @@ export function AdminReportes() {
 
     const { filtersReady, resultados, loading, error, handleBuscar, Limpiar } = useReport({ filtro, periodos, docentes, programas });
 
-    // ── Auth: solo admins (rol 1) ─────────────────────────────────────────────
+    // ── Auth: solo admins (rol 1) y cargar datos iniciales ─────────────────────
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) { navigate("/login"); return; }
         const decoded = decodeToken(token);
         if (!decoded || decoded.rol !== 1) { navigate("/login"); return; }
 
-        // Cargar docentes para el filtro (rol 2)
-        const loadDocentes = async () => {
-            try {
-                const data = await getDocentes();
-                setDocentes(data.filter(d => d.id_rol === 2));
-            } catch (err) {
-                console.error("Error al cargar docentes:", err);
-            }
-        };
-        loadDocentes();
-
-        //Cargar programas
-        const loadProgramas = async () => {
-            try {
-                const data = await getProgramas();
-                setProgramas(data);
-            } catch (err) {
-                console.error("Error al cargar programas:", err);
-            }
-        };
-        loadProgramas();
-
-        // Cargar periodos para mostrar nombres en resultados
-        const loadPeriodos = async () => {
-            try {
-                const data = await getPeriodos();
-                setPeriodos(data);
-            } catch (err) {
-                console.error("Error al cargar periodos:", err);
-            }
-        };
-        loadPeriodos();
-
-        // Cargar grupos para mostrar nombres en resultados
-        const loadGrupos = async () => {
-            try {
-                const data = await getGrupos();
-                setGrupos(data);
-            } catch (err) {
-                console.error("Error al cargar grupos:", err);
-            }
-        };
-        loadGrupos();
-    }, []);
-
-    const handleLimpiar = () => {
-        setFiltro({
-            id:"",
-            programa_id: "",
-            fecha_inicio: "",
-            fecha_fin: ""
-        });
-        Limpiar();
-    };
-
-    // ── Stats resumen del reporte ─────────────────────────────────────────────
-    const stats = resultados ? {
-        totalClases:  resultados.clases.length,
-        totalMinutos: resultados.clases.reduce(
-            (sum, c) => sum + (toMin(c.hora_fin) - toMin(c.hora_inicio)), 0
-        ),
-        diasActivos: [...new Set(resultados.clases.map(c => c.dia_semana))],
-        periodos:    resultados.periodos.length,
-    } : null;
+        loadInitialData();
+    }, [navigate]);
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
@@ -134,18 +64,7 @@ export function AdminReportes() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                <PanelFiltros
-                    filtro={filtro}
-                    setFiltro={setFiltro}
-                    docentes={docentes}
-                    programas={programas}
-                    handleBuscar={handleBuscar}
-                    handleLimpiar={handleLimpiar}
-                    filtersReady={filtersReady}
-                    loading={loading}
-                    resultados={resultados}
-                    error={error}
-                />
+                <PanelFiltros />
 
                 {/* ══ BANNER DE ERROR ══════════════════════════════════════════ */}
                 {error && (
@@ -154,7 +73,7 @@ export function AdminReportes() {
 
                 {/* ══ RESULTADOS ═══════════════════════════════════════════════ */}
                 {resultados && !loading && (
-                    <Resultado resultados={resultados} filtro={filtro} stats={stats} />
+                    <Resultado />
                 )}
 
                 {/* ══ ESTADO VACÍO INICIAL (sin búsqueda) ══════════════════════ */}

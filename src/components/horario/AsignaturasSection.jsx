@@ -1,9 +1,11 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura } from "../../services/asignaturaService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
-export function AsignaturasSection({ asignaturas, setAsignaturas, programas }) {
+export function AsignaturasSection() {
+    const { asignaturas, setAsignaturas, programas } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ nombre: "", programa_id: "" });
     const [editId, setEditId] = useState(null);

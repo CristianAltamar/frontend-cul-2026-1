@@ -1,6 +1,13 @@
-import { cx } from "../../pages/AdminHorario"
+import { cx } from "../../pages/AdminHorario";
+import { useReportStore } from "../../stores/useReportStore.js";
 
-export const PanelFiltros = ({ filtro, setFiltro, docentes, programas, handleBuscar, handleLimpiar, filtersReady, loading, resultados, error }) => {
+export const PanelFiltros = () => {
+    const { 
+        filtro, setFiltro, 
+        docentes, programas, 
+        filtersReady, loading, resultados, error,
+        handleBuscar, handleLimpiar 
+    } = useReportStore();
 
     return (
         <div className={cx.card}>

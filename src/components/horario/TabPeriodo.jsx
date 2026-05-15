@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createPeriodo, updatePeriodo, deletePeriodo } from "../../services/periodoService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
@@ -16,11 +16,9 @@ export function TabPeriodos() {
         try {
             if (editId) {
                 await updatePeriodo(editId, payload);
-                setPeriodos(prev => prev.map(p => p.id === editId ? { ...p, ...form } : p));
                 setEditId(null);
             } else {
                 await createPeriodo(payload);
-                setPeriodos(prev => [...prev, { ...form }]);
             }
         } catch (error) {
             console.error("Error al guardar periodo:", error);
@@ -32,7 +30,6 @@ export function TabPeriodos() {
     const handleDelete = async (id) => {
         try {
             await deletePeriodo(id);
-            setPeriodos(prev => prev.filter(p => p.id !== id));
         } catch (error) {
             console.error("Error al eliminar periodo:", error);
         }
