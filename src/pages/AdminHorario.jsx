@@ -1,22 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
-import { getDisponibilidadDocente } from "../services/disponibilidadService.js";
-import { crearHorario, deleteHorario, getHorarioDocente, updateHorario } from "../services/horarioService.js";
-
-import { getProgramas, createPrograma, updatePrograma, deletePrograma } from "../services/programaService.js";
-import { getJornadas, createJornada, updateJornada, deleteJornada } from "../services/jornadaService.js";
-import { getPeriodos, createPeriodo, updatePeriodo, deletePeriodo } from "../services/periodoService.js";
-import { getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura } from "../services/asignaturaService.js";
-import { getGrupos, createGrupo, updateGrupo, deleteGrupo } from "../services/grupoService.js";
-import { getDocentes } from "../services/userService.js";
-import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
-import { TabAsignaturas }from "../components/horario/TabAsignatura.jsx";
+import { useAdminHorarioStore } from "../stores/useAdminHorarioStore.js";
+import { TabAsignaturas } from "../components/horario/TabAsignatura.jsx";
 import { TabJornadas } from "../components/horario/TabJornada.jsx";
-import { TabPeriodos }  from "../components/horario/TabPeriodo.jsx";
-import { TabGrupos }   from "../components/horario/TabGrupo.jsx";
-import { TabHorario }  from "../components/horario/TabHorario.jsx";
-import { createSchedule } from "../utils/schedule.js"; 
+import { TabPeriodos } from "../components/horario/TabPeriodo.jsx";
+import { TabGrupos } from "../components/horario/TabGrupo.jsx";
+import { TabHorario } from "../components/horario/TabHorario.jsx"; 
+import { LoadingSpinner } from "../components/LoadingSpinner.jsx";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 
@@ -58,129 +49,70 @@ function generateTimeSlots(horaInicio, horaFin, intervalMin = 60) {
 
 export function AdminHorario() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("horario");
 
-    const [programas,    setProgramas]    = useState([]);
-    const [periodos,     setPeriodos]     = useState([]);
-    const [jornadas,     setJornadas]     = useState([]);
-    const [asignaturas,  setAsignaturas]  = useState([]);
-    const [docentes,     setDocentes]     = useState([]);
-    const [grupos,       setGrupos]       = useState([]);
-    const [asignaciones, setAsignaciones] = useState([]);
-    const [filtro, setFiltro] = useState({ periodo_id: "", jornada_id: "", docente_id: "", programa_id: "" });
+    // ── Obtener estado y acciones del store ────────────────────────────────
+    const {
+        activeTab, setActiveTab, loading, 
+        error, loadAllData
+    } = useAdminHorarioStore();
 
+    // ── Auth: solo admins (rol 1) y cargar datos iniciales ────────────────
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) { navigate("/login"); return; }
         const decoded = decodeToken(token);
         if (!decoded || decoded.rol !== 1) { navigate("/login"); return; }
 
-        const loadData = async () => {
-            try {
-                const [p, per, j, a, d, g] = await Promise.all([
-                    getProgramas(),
-                    getPeriodos(),
-                    getJornadas(),
-                    getAsignaturas(),
-                    getDocentes(),
-                    getGrupos(),
-                ]);
-
-                setProgramas(Array.isArray(p) ? p.map(programa => ({
-                    ...programa,
-                    facultad_id: programa.id_facultad ?? programa.facultad_id,
-                })) : []);
-                setPeriodos(Array.isArray(per) ? per.map(periodo => ({
-                    ...periodo,
-                    inicio: periodo.fecha_inicio ?? periodo.inicio,
-                    fin: periodo.fecha_fin ?? periodo.fin,
-                    activo: periodo.activo ?? false,
-                })) : []);
-                setJornadas(Array.isArray(j) ? j : []);
-                setAsignaturas(Array.isArray(a) ? a.map(asignatura => ({
-                    ...asignatura,
-                    programa_id: asignatura.id_programa ?? asignatura.programa_id,
-                    codigo: asignatura.codigo ?? "",
-                    creditos: asignatura.creditos ?? "",
-                })) : []);
-                setDocentes(Array.isArray(d) ? d : []);
-                setGrupos(Array.isArray(g) ? g.map(grupo => ({
-                    ...grupo,
-                    nombre: grupo.codigo_grupo ?? grupo.nombre,
-                    programa_id: grupo.id_programa ?? grupo.programa_id ?? null,
-                    semestre: grupo.semestre ?? null,
-                })) : []);
-            } catch (error) {
-                console.error("Error al cargar los datos iniciales:", error);
-            }
-        };
-
-        loadData();
-
+        loadAllData();
     }, [navigate]);
 
     return (
         <div className="min-h-screen bg-neutral-50 font-sans">
-
-            {/* ── Header + Tab bar ── */}
-            <div className="bg-white border-b border-neutral-100 sticky top-14 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-7 pb-0">
-                    <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-800 tracking-tight">
-                        Programación Académica
-                    </h1>
-                    <p className="mt-1 text-sm text-neutral-500 mb-4">
-                        Gestiona horarios, grupos, periodos, jornadas y asignaturas
-                    </p>
-
-                    {/* Tabs */}
-                    <div className="flex gap-0 overflow-x-auto">
-                        {TABS.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                                    activeTab === tab.id
-                                        ? "border-neutral-900 text-neutral-900"
-                                        : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-200"
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
+            {loading ? (
+                <div className="min-h-screen flex items-center justify-center">
+                    <LoadingSpinner />
                 </div>
-            </div>
+            ) : (
+                <>
+                    {/* ── Header + Tab bar ── */}
+                    <div className="bg-white border-b border-neutral-100 sticky top-14 z-40">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-7 pb-0">
+                            <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-800 tracking-tight">
+                                Programación Académica
+                            </h1>
+                            <p className="mt-1 text-sm text-neutral-500 mb-4">
+                                Gestiona horarios, grupos, periodos, jornadas y asignaturas
+                            </p>
 
-            {/* ── Contenido de tab ── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-                {activeTab === "horario" && (
-                    <TabHorario
-                        filtro={filtro} setFiltro={setFiltro}
-                        periodos={periodos} jornadas={jornadas}
-                        programas={programas} asignaturas={asignaturas}
-                        docentes={docentes} grupos={grupos}
-                        asignaciones={asignaciones} setAsignaciones={setAsignaciones}
-                    />
-                )}
-                {activeTab === "grupos" && (
-                    <TabGrupos
-                        grupos={grupos} setGrupos={setGrupos}
-                        periodos={periodos} jornadas={jornadas}
-                    />
-                )}
-                {activeTab === "periodos" && (
-                    <TabPeriodos periodos={periodos} setPeriodos={setPeriodos} />
-                )}
-                {activeTab === "jornadas" && (
-                    <TabJornadas jornadas={jornadas} setJornadas={setJornadas} />
-                )}
-                {activeTab === "asignaturas" && (
-                    <TabAsignaturas
-                        asignaturas={asignaturas} setAsignaturas={setAsignaturas}
-                        programas={programas} setProgramas={setProgramas}
-                    />
-                )}
-            </div>
+                            {/* Tabs */}
+                            <div className="flex gap-0 overflow-x-auto">
+                                {TABS.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                            activeTab === tab.id
+                                                ? "border-neutral-900 text-neutral-900"
+                                                : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-200"
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Contenido de tab ── */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                        {activeTab === "horario" && <TabHorario />}
+                        {activeTab === "grupos" && <TabGrupos />}
+                        {activeTab === "periodos" && <TabPeriodos />}
+                        {activeTab === "jornadas" && <TabJornadas />}
+                        {activeTab === "asignaturas" && <TabAsignaturas />}
+                    </div>
+                </>
+            )}
         </div>
     );
 }

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { createGrupo, updateGrupo, deleteGrupo } from "../../services/grupoService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 
-export function TabGrupos({ grupos, setGrupos, periodos, jornadas }) {
+export function TabGrupos() {
+    const { grupos, setGrupos, periodos, jornadas } = useAdminHorarioStore();
     // ── Estado Grupos ────────────────────────────────────────────────────────
     const [showGrupoForm, setShowGrupoForm] = useState(false);
     const [grupoForm,     setGrupoForm]     = useState({ codigo: "", id_periodo: "", id_jornada: "", cupo: "" });

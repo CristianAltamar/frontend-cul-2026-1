@@ -1,6 +1,7 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { getDisponibilidadDocente } from "../../services/disponibilidadService.js";
 import { getHorarioDocente, crearHorario, updateHorario, deleteHorario, getHorarios } from "../../services/horarioService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { createSchedule, formatTimeForApi } from "../../utils/schedule.js";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
@@ -9,7 +10,13 @@ import { TableHorario } from "./tabHorario/TableHorario.jsx";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, grupos, asignaciones, setAsignaciones }) {
+export function TabHorario() {
+    // ── Obtener estado del store ──────────────────────────────────────
+    const {
+        filtro, setFiltro,
+        periodos, jornadas, programas, asignaturas, docentes, grupos,
+        asignaciones, setAsignaciones
+    } = useAdminHorarioStore();
     const [modal,   setModal]   = useState(null);
     const [form,    setForm]    = useState({ asignatura_id: "", grupo_id: "", aula: "", _id: null });
     const [saving,  setSaving]  = useState(false);
@@ -384,14 +391,6 @@ export function TabHorario({ filtro, setFiltro, periodos, jornadas, programas, a
                                 ) : null}
                             </div>
 
-                        </div>
-
-                        {/* Aula */}
-                        <div>
-                            <label className={cx.label}>Aula / Salón</label>
-                            <input className={cx.input} placeholder="Ej: A-201"
-                                value={form.aula}
-                                onChange={e => setForm(f => ({ ...f, aula: e.target.value }))} />
                         </div>
 
                         {/* Acciones */}

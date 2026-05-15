@@ -1,9 +1,11 @@
-import{ cx } from "../../pages/AdminHorario";
+import { cx } from "../../pages/AdminHorario";
+import { useReportStore } from "../../stores/useReportStore.js";
 import { TarjetaStats } from "./resultado/TarjetaStats.jsx";
 import { TablaDetalle } from "./resultado/TablaDetalle.jsx";
 import { DetalleCelular } from "./resultado/DetalleCelular.jsx";
 
-export const Resultado = ({ resultados, filtro, stats }) => {
+export const Resultado = () => {
+    const { resultados, filtro, stats } = useReportStore();
     return (
         <div className="space-y-5">
 

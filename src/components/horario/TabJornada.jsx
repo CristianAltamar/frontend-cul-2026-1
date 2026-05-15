@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { createJornada, updateJornada, deleteJornada } from "../../services/jornadaService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { formatTimeForApi } from "../../utils/schedule.js";
 
-export function TabJornadas({ jornadas, setJornadas }) {
+export function TabJornadas() {
+    const { jornadas, createJornada, updateJornada, deleteJornada } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", hora_inicio: "", hora_fin: "" });
     const [editId,  setEditId]  = useState(null);
@@ -13,12 +14,9 @@ export function TabJornadas({ jornadas, setJornadas }) {
         try {
             if (editId) {
                 await updateJornada(editId, form);
-                setJornadas(prev => prev.map(j => j.id === editId ? { ...j, ...form } : j));
                 setEditId(null);
             } else {
-                const response = await createJornada(form);
-                const created = response.resultado ?? { ...form };
-                setJornadas(prev => [...prev, created]);
+                await createJornada(form);
             }
         } catch (error) {
             console.error("Error al guardar jornada:", error);
@@ -30,7 +28,6 @@ export function TabJornadas({ jornadas, setJornadas }) {
     const handleDelete = async (id) => {
         try {
             await deleteJornada(id);
-            setJornadas(prev => prev.filter(j => j.id !== id));
         } catch (error) {
             console.error("Error al eliminar jornada:", error);
         }

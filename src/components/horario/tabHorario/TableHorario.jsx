@@ -48,11 +48,6 @@ export const TableHorario = ({ timeSlots, isDisponible, getAsignacionPropia, asi
                                         <p className="text-[11px] font-semibold leading-tight whitespace-nowrap truncate">{asig_?.nombre ?? "—"}</p>
                                         <div className="mt-1.5 space-y-0.5">
                                             <p className="text-[10px] text-neutral-400 truncate whitespace-nowrap overflow-hidden">{docenteActual?.primer_nombre ?? "—"} {docenteActual?.primer_apellido ?? "—"}</p>
-                                            {asig.aula && (
-                                                <span className="inline-block text-[9px] bg-neutral-700 text-neutral-300 px-1.5 py-0.5 rounded-full truncate whitespace-nowrap overflow-hidden">
-                                                    Aula {asig.aula}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ) : disp ? (
