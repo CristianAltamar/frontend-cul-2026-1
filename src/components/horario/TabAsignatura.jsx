@@ -1,7 +1,7 @@
 import { AsignaturasSection } from "./AsignaturasSection.jsx";
 import { FacultadesSection } from "./FacultadesSection.jsx";
 import { ProgramasSection } from "./ProgramasSection.jsx";
-import { getFacultades } from "../../services/facultadService.js";
+import { getFacultades, createFacultad, updateFacultad, deleteFacultad } from "../../services/facultadService.js";
 import { useEffect, useState } from "react";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
@@ -32,7 +32,7 @@ export function TabAsignaturas() {
                     </svg>
                 </summary>
                 <div className="mt-4">
-                    <AsignaturasSection />
+                    <AsignaturasSection asignaturas={asignaturas} setAsignaturas={setAsignaturas} programas={programas} />
                 </div>
             </details>
 
@@ -62,7 +62,7 @@ export function TabAsignaturas() {
                     </svg>
                 </summary>
                 <div className="mt-4">
-                    <ProgramasSection facultades={facultades} />
+                    <ProgramasSection programas={programas} setProgramas={setProgramas} facultades={facultades} />
                 </div>
             </details>
         </div>

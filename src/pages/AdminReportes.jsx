@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { LoadingOverlay } from "../components/LoadingSpinner.jsx";
 import { cx } from "./AdminHorario.jsx";
-import { useReportStore } from "../stores/useReportStore.js";
 import { PanelFiltros } from "../components/adminReportes/PanelFiltros.jsx";
 import { Error } from "../components/Error.jsx";
 import { Resultado } from "../components/adminReportes/Resultado.jsx";

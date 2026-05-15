@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
