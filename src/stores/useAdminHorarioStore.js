@@ -30,6 +30,8 @@ import {
     deleteGrupo,
 } from '../services/grupoService.js';
 import { getDocentes } from '../services/userService.js';
+import { getDisponibilidadDocente } from '../services/disponibilidadService.js';
+import { getHorarioDocente } from '../services/horarioService.js';
 
 /**
  * Store Zustand para AdminHorario
@@ -44,6 +46,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     docentes: [],
     grupos: [],
     asignaciones: [],
+    disponibilidadDocente: [],
     filtro: {
         periodo_id: '',
         jornada_id: '',
@@ -66,6 +69,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     setActiveTab: (tab) => set({ activeTab: tab }),
     setLoading: (loading) => set({ loading }),
     setError: (error) => set({ error }),
+    setDisponibilidadDocente: (disponibilidad) => set({ disponibilidadDocente: disponibilidad }),
 
     // ── Acciones útiles ────────────────────────────────────────────────────
     resetFiltro: () =>
@@ -77,6 +81,39 @@ export const useAdminHorarioStore = create((set, get) => ({
                 programa_id: '',
             },
         }),
+
+    /**
+     * Cargar disponibilidad y horarios del docente
+     * Se ejecuta cuando se cambian periodo, jornada o docente
+     */
+    loadDisponibilidadAndHorarios: async (docenteId, periodoId, jornadaId) => {
+        if (!docenteId || !periodoId) {
+            set({
+                disponibilidadDocente: [],
+                asignaciones: [],
+            });
+            return;
+        }
+
+        try {
+            const [disponibilidad, horarios] = await Promise.all([
+                getDisponibilidadDocente(docenteId, periodoId),
+                getHorarioDocente(docenteId, periodoId),
+            ]);
+
+            set({
+                disponibilidadDocente: Array.isArray(disponibilidad) ? disponibilidad : [],
+                asignaciones: Array.isArray(horarios) ? horarios : [],
+            });
+        } catch (error) {
+            console.error('Error al cargar disponibilidad y horarios:', error);
+            set({
+                disponibilidadDocente: [],
+                asignaciones: [],
+                error: 'Error al cargar disponibilidad y horarios',
+            });
+        }
+    },
 
     /**
      * Cargar todos los datos iniciales
