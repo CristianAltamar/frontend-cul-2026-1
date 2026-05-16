@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from "../utils/decodeToken.js";
 import { LoadingOverlay } from "../components/LoadingSpinner.jsx";
@@ -7,6 +7,7 @@ import { PanelFiltros } from "../components/adminReportes/PanelFiltros.jsx";
 import { Error } from "../components/Error.jsx";
 import { Resultado } from "../components/adminReportes/Resultado.jsx";
 import doc from "../assets/doc.svg";
+import { useReport } from "../hooks/useReport.jsx";
 import { useReportStore } from "../stores/useReportStore.js";
 
 
@@ -14,7 +15,7 @@ import { useReportStore } from "../stores/useReportStore.js";
 // COMPONENTE PRINCIPAL
 // ═════════════════════════════════════════════════════════════════════════════
 export function AdminReportes() {
-    const { docentes, setDocentes, programas, setProgramas, periodos, setPeriodos } = useReportStore();
+    const { docentes, setDocentes, programas, setProgramas, periodos, setPeriodos, loadInitialData, resultados, loading, error, handleBuscar} = useReportStore();
     const navigate = useNavigate();
 
     // ── Filtros del reporte ────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export function AdminReportes() {
     const [horarios, setHorarios] = useState([]);
     const [horariosDocente, setHorariosDocente] = useState([]);
 
-    const { filtersReady, resultados, loading, error, handleBuscar, Limpiar } = useReport({ filtro, periodos, docentes, programas });
+    const { filtersReady, Limpiar } = useReport({ filtro, periodos, docentes, programas });
 
     // ── Auth: solo admins (rol 1) y cargar datos iniciales ─────────────────────
     useEffect(() => {

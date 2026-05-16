@@ -19,7 +19,7 @@ export function AppRoutes() {
                 {/* Páginas sin navbar */}
                 <Route path="/login"    element={<Login />}     />
                 <Route path="/register" element={<Register />}  />
-                <Route path="/"         element={<Home />}       />
+                <Route path="/"         element={<Login />}       />
                 <Route path="/admin"    element={<AdminPanel />} />
                 <Route path="/docente"  element={<Docente />}    />
 

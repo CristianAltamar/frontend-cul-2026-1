@@ -3,9 +3,18 @@ import { useReportStore } from "../../stores/useReportStore.js";
 import { TarjetaStats } from "./resultado/TarjetaStats.jsx";
 import { TablaDetalle } from "./resultado/TablaDetalle.jsx";
 import { DetalleCelular } from "./resultado/DetalleCelular.jsx";
+import { useEffect } from "react";
 
 export const Resultado = () => {
-    const { resultados, filtro, stats } = useReportStore();
+    const { resultados, filtro, stats, loading } = useReportStore();
+
+    useEffect(() => {
+        console.log("Resultados actualizados:", resultados);
+        console.log("Filtros actualizados:", filtro);
+        console.log("Stats actualizados:", stats);
+        console.log("Cargando:", loading);
+    }, [resultados, filtro, stats, loading]);
+
     return (
         <div className="space-y-5">
 

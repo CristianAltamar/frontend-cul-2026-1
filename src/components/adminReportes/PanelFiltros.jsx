@@ -1,13 +1,22 @@
 import { cx } from "../../pages/AdminHorario";
 import { useReportStore } from "../../stores/useReportStore.js";
+import { useEffect } from "react";
 
 export const PanelFiltros = () => {
     const { 
         filtro, setFiltro, 
         docentes, programas, 
-        filtersReady, loading, resultados, error,
+        loading, resultados, error,
         handleBuscar, handleLimpiar 
     } = useReportStore();
+
+    const filtersReady =(
+            filtro.docente_id &&
+            filtro.programa_id &&
+            filtro.fecha_inicio &&
+            filtro.fecha_fin &&
+            filtro.fecha_inicio <= filtro.fecha_fin
+        )
 
     return (
         <div className={cx.card}>
@@ -25,13 +34,12 @@ export const PanelFiltros = () => {
                         <label className={cx.label}>Docente</label>
                         <select
                             className={cx.input}
-                            value={filtro.id}
+                            value={filtro.docente_id}
                             onChange={e =>
-                                setFiltro(f => ({
-                                    ...f,
-                                    id:  e.target.value,
+                                setFiltro({
+                                    docente_id:  e.target.value,
                                     programa_id: "", // resetear programa al cambiar docente
-                                }))
+                                })
                             }
                         >
                             <option value="">Selecciona docente</option>
@@ -47,7 +55,7 @@ export const PanelFiltros = () => {
                         <select
                             className={cx.input}
                             value={filtro.programa_id}
-                            onChange={e => setFiltro(f => ({ ...f, programa_id: e.target.value }))}
+                            onChange={e => setFiltro({ programa_id: e.target.value })}
                         >
                             <option value="">
                                 Selecciona programa
@@ -67,7 +75,7 @@ export const PanelFiltros = () => {
                             type="date"
                             className={cx.input}
                             value={filtro.fecha_inicio}
-                            onChange={e => setFiltro(f => ({ ...f, fecha_inicio: e.target.value }))}
+                            onChange={e => setFiltro({ fecha_inicio: e.target.value })}
                         />
                     </div>
 
@@ -79,7 +87,7 @@ export const PanelFiltros = () => {
                             className={cx.input}
                             value={filtro.fecha_fin}
                             min={filtro.fecha_inicio || undefined}
-                            onChange={e => setFiltro(f => ({ ...f, fecha_fin: e.target.value }))}
+                            onChange={e => setFiltro({ fecha_fin: e.target.value })}
                         />
                         {filtro.fecha_inicio && filtro.fecha_fin && filtro.fecha_inicio > filtro.fecha_fin && (
                             <p className="text-xs text-red-600 mt-1">

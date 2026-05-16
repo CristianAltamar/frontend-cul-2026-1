@@ -35,7 +35,7 @@ const toMin = (t) => {
 export const useReportStore = create((set, get) => ({
     // ── Estados ────────────────────────────────────────────────────────────
     filtro: {
-        id: '',
+        docente_id: '',
         programa_id: '',
         fecha_inicio: '',
         fecha_fin: '',
@@ -57,20 +57,6 @@ export const useReportStore = create((set, get) => ({
     setLoading: (loading) => set({ loading }),
     setError: (error) => set({ error }),
     setStats: (stats) => set({ stats }),
-
-    /**
-     * Validar si los filtros están listos para buscar
-     */
-    get filtersReady() {
-        const state = get();
-        return (
-            state.filtro.id &&
-            state.filtro.programa_id &&
-            state.filtro.fecha_inicio &&
-            state.filtro.fecha_fin &&
-            state.filtro.fecha_inicio <= state.filtro.fecha_fin
-        );
-    },
 
     /**
      * Cargar datos iniciales (docentes, programas, periodos)
@@ -111,8 +97,6 @@ export const useReportStore = create((set, get) => ({
      */
     handleBuscar: async () => {
         const state = get();
-        
-        if (!state.filtersReady) return;
 
         set({ loading: true, error: '', stats: null });
 
@@ -139,7 +123,7 @@ export const useReportStore = create((set, get) => ({
 
             // Obtener horarios del docente
             const horariosDocente = await getHorarioDocente(
-                state.filtro.id,
+                state.filtro.docente_id,
                 periodoIds[0],
                 state.filtro.programa_id
             );
@@ -168,7 +152,7 @@ export const useReportStore = create((set, get) => ({
             set({
                 resultados: {
                     docente: state.docentes.find(
-                        (d) => d.id === parseInt(state.filtro.id)
+                        (d) => d.id === parseInt(state.filtro.docente_id)
                     ),
                     programa: state.programas.find(
                         (p) => p.id === parseInt(state.filtro.programa_id)
@@ -195,7 +179,7 @@ export const useReportStore = create((set, get) => ({
     handleLimpiar: () => {
         set({
             filtro: {
-                id: '',
+                docente_id: '',
                 programa_id: '',
                 fecha_inicio: '',
                 fecha_fin: '',
