@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
-import { createFacultad, updateFacultad, deleteFacultad } from "../../services/facultadService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
-export function FacultadesSection({ facultades, setFacultades }) {
+export function FacultadesSection() {
+    const { getFacultades, updateFacultad, deleteFacultad, facultades, setFacultades } = useAdminHorarioStore();
     const [showFacForm, setShowFacForm] = useState(false);
     const [facForm, setFacForm] = useState({ nombre: "", codigo: "" });
     const [editFacId, setEditFacId] = useState(null);
@@ -12,8 +13,6 @@ export function FacultadesSection({ facultades, setFacultades }) {
         try {
             if (editFacId) {
                 await updateFacultad(editFacId, facForm);
-                setFacultades(prev => prev.map(f => f.id === editFacId ? { ...f, ...facForm } : f));
-                setEditFacId(null);
             } else {
                 // eslint-disable-next-line no-unused-vars
                 const response = await createFacultad(facForm);
@@ -29,7 +28,6 @@ export function FacultadesSection({ facultades, setFacultades }) {
     const handleDeleteFacultad = async (id) => {
         try {
             await deleteFacultad(id);
-            setFacultades(prev => prev.filter(f => f.id !== id));
         } catch (error) {
             console.error("Error al eliminar facultad:", error);
         }

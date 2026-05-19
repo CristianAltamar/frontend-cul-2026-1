@@ -41,9 +41,8 @@ export const TableHorario = ({ handleCellClick }) => {
                     </td>
                     {DIAS.map((dia, i) => {
                         const asig  = getAsignacionPropia(i+1, formatTimeForApi(slot.inicio));
-                        const asig_ = asignaturas.find(a => a.id === asig?.id_asignatura);
                         const disp  = isDisponible(DIA_NUM[dia], slot.inicio, slot.fin);
-                        console.log("asig:", asig, "asig_:", asig_, "disp:", disp);
+                        console.log("asig:", asig, "disp:", disp);
                         return (
                             <td key={dia}
                                 onClick={() => handleCellClick(dia, slot)}
@@ -53,7 +52,7 @@ export const TableHorario = ({ handleCellClick }) => {
                             >
                                 {asig ? (
                                     <div className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-2.5 py-2.5 min-h-15 flex flex-col justify-between transition-all duration-150 shadow-sm hover:shadow-md w-full overflow-hidden min-w-0">
-                                        <p className="text-[11px] font-semibold leading-tight whitespace-nowrap truncate">{asig_?.nombre ?? "—"}</p>
+                                        <p className="text-[11px] font-semibold leading-tight whitespace-nowrap truncate">{asig?.asignatura ?? "—"}</p>
                                         <div className="mt-1.5 space-y-0.5">
                                             <p className="text-[10px] text-neutral-400 truncate whitespace-nowrap overflow-hidden">{filtro.docente?.primer_nombre ?? "—"} {filtro.docente?.primer_apellido ?? "—"}</p>
                                         </div>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
-import { createPrograma, updatePrograma, deletePrograma } from "../../services/programaService.js";
+import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
-export function ProgramasSection({ programas, setProgramas, facultades }) {
+export function ProgramasSection() {
+    const { getProgramas, updatePrograma, deletePrograma, programas, setProgramas, facultades } = useAdminHorarioStore();
     const [showProgForm, setShowProgForm] = useState(false);
     const [progForm, setProgForm] = useState({ nombre: "", codigo: "", facultad_id: "" });
     const [editProgId, setEditProgId] = useState(null);

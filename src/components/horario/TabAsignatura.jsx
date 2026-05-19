@@ -1,23 +1,10 @@
 import { AsignaturasSection } from "./AsignaturasSection.jsx";
 import { FacultadesSection } from "./FacultadesSection.jsx";
 import { ProgramasSection } from "./ProgramasSection.jsx";
-import { getFacultades, createFacultad, updateFacultad, deleteFacultad } from "../../services/facultadService.js";
 import { useEffect, useState } from "react";
-import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 
 export function TabAsignaturas() {
-    const { asignaturas, setAsignaturas, programas, setProgramas } = useAdminHorarioStore();
-    const [facultades, setFacultades] = useState([]);
-
-
-    useEffect(() => {
-        const loadFacultades = async () => {
-            const data = await getFacultades();
-            setFacultades(data);
-        };
-        loadFacultades();
-    }, []);
 
     return (
         <div className="space-y-6">
@@ -32,7 +19,7 @@ export function TabAsignaturas() {
                     </svg>
                 </summary>
                 <div className="mt-4">
-                    <AsignaturasSection asignaturas={asignaturas} setAsignaturas={setAsignaturas} programas={programas} />
+                    <AsignaturasSection />
                 </div>
             </details>
 
@@ -47,7 +34,7 @@ export function TabAsignaturas() {
                     </svg>
                 </summary>
                 <div className="mt-4">
-                    <FacultadesSection facultades={facultades} setFacultades={setFacultades} />
+                    <FacultadesSection />
                 </div>
             </details>
 
@@ -62,7 +49,7 @@ export function TabAsignaturas() {
                     </svg>
                 </summary>
                 <div className="mt-4">
-                    <ProgramasSection programas={programas} setProgramas={setProgramas} facultades={facultades} />
+                    <ProgramasSection />
                 </div>
             </details>
         </div>

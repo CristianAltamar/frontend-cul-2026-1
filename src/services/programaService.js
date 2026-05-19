@@ -5,6 +5,11 @@ export const getProgramas = async () => {
     return response.data.resultado;
 };
 
+export const getProgramaByAsignatura = async (asignatura_id) => {
+    const response = await api.get(`/get_programa_by_asignatura/${asignatura_id}`);
+    return response.data;
+}
+
 export const createPrograma = async (programa) => {
     const response = await api.post("/create_programa", programa);
     return response.data;

@@ -13,7 +13,7 @@ import { parseTime } from "../../utils/schedule.js";
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export function TabHorario() {
-    const { filtro, setFiltro, periodos, jornadas, programas, asignaturasFiltradas, asignaturas,  loadAsignaturasByPrograma, docentes, gruposFiltrados, loadGruposByPeriodoJornada, asignaciones, setAsignaciones, disponibilidadDocente, setDisponibilidadDocente, loadDisponibilidadAndHorarios, loadingDispAsig, isDisponible, getAsignacionPropia } = useAdminHorarioStore();
+    const { filtro, setFiltro, periodos, jornadas, programas, getProgramaByAsignatura, asignaturas, getAsignaturas, docentes, gruposFiltrados, loadGruposByPeriodoJornada, asignaciones, setAsignaciones, disponibilidadDocente, setDisponibilidadDocente, loadDisponibilidadAndHorarios, loadingDispAsig, isDisponible, getAsignacionPropia } = useAdminHorarioStore();
 
     const [modal,   setModal]   = useState(null);
     const [form,    setForm]    = useState({ asignatura_id: "", grupo_id: "", aula: "", _id: null });
@@ -24,10 +24,6 @@ export function TabHorario() {
     const DIA_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6 };
 
     const filtersReady =  filtro.periodo && filtro.jornada && filtro.docente;
-
-    useEffect(() => {
-        console.log("Asignaturas filtradas:", asignaturasFiltradas);
-    }, [asignaturasFiltradas]);
 
     const handleCellClick = (dia, slot) => {
         if (!filtersReady) return;
@@ -48,13 +44,7 @@ export function TabHorario() {
     useEffect(() => {
         if (!modal) return;
         if (form.asignatura_id) {
-            const { programa_id, programa } = asignaturas.find(a => a.id === parseInt(form.asignatura_id))
-            if (programa_id && programa) {
-                setFiltro({ programa:  { id: programa_id, nombre: programa }});
-            }
-            else {
-                setFiltro({ programa: null });
-            }
+            getProgramaByAsignatura(form.asignatura_id);
         }
     }, [modal]);
 
@@ -70,7 +60,7 @@ export function TabHorario() {
 
     useEffect(() => {
         if (!filtro.programa) return;
-        loadAsignaturasByPrograma(filtro.programa.id);
+        getAsignaturas(filtro.programa.id);
         loadGruposByPeriodoJornada(filtro.periodo?.id, filtro.jornada?.id);
     }, [filtro.programa]);
 
@@ -124,8 +114,7 @@ export function TabHorario() {
                 await crearHorario(payload);
             }
 
-            const data = await getHorarioDocente(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
-            setAsignaciones(Array.isArray(data) ? data : []);
+            await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
             setModal(null);
         } catch (error) {
             console.error("Error al guardar horario:", error);
@@ -139,8 +128,7 @@ export function TabHorario() {
         if (!id) return;
         try {
             await deleteHorario(id);
-            const data = await getHorarioDocente(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
-            setAsignaciones(Array.isArray(data) ? data : []);
+            await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
             setModal(null);
         } catch (error) {
             console.error("Error al eliminar horario:", error);
@@ -295,7 +283,7 @@ export function TabHorario() {
                                 <select className={cx.input} value={form.asignatura_id}
                                     onChange={e => setForm(f => ({ ...f, asignatura_id: e.target.value }))}>
                                     <option value="">Selecciona asignatura</option>
-                                    {filtro.programa && (asignaturasFiltradas.map(a => (
+                                    {filtro.programa && (asignaturas.map(a => (
                                         <option key={a.id} value={a.id}>{a.nombre}</option>
                                     )))}
                                 </select>

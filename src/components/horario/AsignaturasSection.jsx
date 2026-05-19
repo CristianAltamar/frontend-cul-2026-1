@@ -1,62 +1,50 @@
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
 import { cx } from "../../pages/AdminHorario.jsx";
-import { getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura } from "../../services/asignaturaService.js";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { use } from "react";
 
 export function AsignaturasSection() {
-    const { asignaturas, setAsignaturas, programas } = useAdminHorarioStore();
+    const { asignaturas, programas, getProgramaByAsignatura, getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura, loading } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ nombre: "", programa_id: "" });
+    const [form, setForm] = useState({ nombre: "", id_programa: "" });
     const [editId, setEditId] = useState(null);
     const [filterProg, setFilterProg] = useState("");
-    const [lista, setLista] = useState([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadAsignaturas = async () => {
-            try {
-                const data = await getAsignaturas();
-                setAsignaturas(data.resultado || []);
-                setLista(data || []);
-
-            } catch (error) {
-                console.error("Error al cargar asignaturas:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadAsignaturas();
-    }, [setAsignaturas]);
-
+        if (!editId) return;
+        getProgramaByAsignatura(editId)
+            .then(prog => {
+                setForm(f => ({ ...f, id_programa: prog?.id ?? "" }));
+            })
+            .catch(error => {
+                console.error("Error al obtener programa de asignatura:", error);
+            });
+    }, [editId]);
+    
     useEffect(() => {
-        console.log(asignaturas);
-    }, [asignaturas]);
+        getAsignaturas(filterProg);
+    }, [filterProg]);
 
     const saveAsignatura = async (e) => {
         e.preventDefault();
         try {
             if (editId) {
                 await updateAsignatura(editId, form);
-                setAsignaturas(prev => prev.map(a => a.id === editId ? { ...a, ...form } : a));
                 setEditId(null);
             } else {
                 const response = await createAsignatura(form);
-                const created = response.resultado ?? { ...form };
-                setAsignaturas(prev => [...prev, created]);
             }
         } catch (error) {
             console.error("Error al guardar asignatura:", error);
         }
-        setForm({ nombre: "", programa_id: "" });
+        setForm({ nombre: "", id_programa: "" });
         setShowForm(false);
     };
 
     const handleDelete = async (id) => {
         try {
             await deleteAsignatura(id);
-            setAsignaturas(prev => prev.filter(a => a.id !== id));
-            setLista(prev => prev.filter(a => a.id !== id));
         } catch (error) {
             console.error("Error al eliminar asignatura:", error);
         }
@@ -70,7 +58,7 @@ export function AsignaturasSection() {
                 <div>
                     <h3 className="font-semibold text-neutral-800">Asignaturas</h3>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                        {lista.length} asignaturas · cada asignatura pertenece a un programa
+                        {asignaturas.length} asignaturas · cada asignatura pertenece a un programa
                     </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -82,7 +70,7 @@ export function AsignaturasSection() {
                         <option value="">Todos los programas</option>
                         {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                     </select>
-                    <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm({ nombre: "", programa_id: "" }); }}
+                    <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm({ nombre: "", id_programa: "" }); }}
                         className={cx.btnPrimary}>
                         {showForm ? "Cancelar" : "+ Nueva asignatura"}
                     </button>
@@ -100,8 +88,8 @@ export function AsignaturasSection() {
                         </div>
                         <div>
                             <label className={cx.label}>Programa</label>
-                            <select required className={cx.input} value={form.programa_id}
-                                onChange={e => setForm(f => ({ ...f, programa_id: e.target.value }))}>
+                            <select required className={cx.input} value={form.id_programa}
+                                onChange={e => setForm(f => ({ ...f, id_programa: e.target.value }))}>
                                 <option value="">Selecciona programa</option>
                                 {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                             </select>
@@ -124,7 +112,7 @@ export function AsignaturasSection() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-50">
-                        {lista.map(a => {
+                        {asignaturas.map(a => {
                             return (
                                 <tr key={a.id} className="hover:bg-neutral-50/50 transition-colors">
                                     <td className={`${cx.td} font-medium`}>{a.nombre}</td>
@@ -132,7 +120,7 @@ export function AsignaturasSection() {
                                     <td className={`${cx.td} text-right`}>
                                         <div className="flex gap-2 justify-end">
                                             <button className={cx.btnEdit}
-                                                onClick={() => { setForm({ nombre: a.nombre, programa_id: a.programa_id ?? "" }); setEditId(a.id); setShowForm(true); }}>
+                                                onClick={() => { setForm({ nombre: a.nombre, id_programa: a.id_programa ?? "" }); setEditId(a.id); setShowForm(true); }}>
                                                 Editar
                                             </button>
                                             <button className={cx.btnDanger} onClick={() => handleDelete(a.id)}>Eliminar</button>
@@ -141,7 +129,7 @@ export function AsignaturasSection() {
                                 </tr>
                             );
                         })}
-                        {lista.length === 0 && (
+                        {asignaturas.length === 0 && (
                             <tr>
                                 <td colSpan="3" className="px-5 py-10 text-center text-neutral-400 italic text-sm">
                                     Sin asignaturas registradas

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
     getProgramas,
+    getProgramaByAsignatura,
     createPrograma,
     updatePrograma,
     deletePrograma,
@@ -30,6 +31,12 @@ import {
     updateGrupo,
     deleteGrupo,
 } from '../services/grupoService.js';
+import {
+    getFacultades,
+    createFacultad,
+    updateFacultad,
+    deleteFacultad,
+} from '../services/facultadService.js';
 import { getDocentes } from '../services/userService.js';
 import { getDisponibilidadDocente } from '../services/disponibilidadService.js';
 import { getHorarioDocente } from '../services/horarioService.js';
@@ -50,6 +57,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     grupos: [],
     gruposFiltrados: [],
     asignaciones: [],
+    facultades: [],
     disponibilidadDocente: [],
     filtro: {
         periodo: '',
@@ -72,6 +80,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     setGrupos: (grupos) => set({ grupos }),
     setGruposFiltrados: (gruposFiltrados) => set({ gruposFiltrados }),
     setAsignaciones: (asignaciones) => set({ asignaciones }),
+    setFacultades: (facultades) => set({ facultades }),
     setFiltro: (filtro) => set((state) => ({ filtro: { ...state.filtro, ...filtro } })),
     setActiveTab: (tab) => set({ activeTab: tab }),
     setLoading: (loading) => set({ loading }),
@@ -164,74 +173,26 @@ export const useAdminHorarioStore = create((set, get) => ({
      * Se ejecuta una sola vez al montar AdminHorario
      */
     loadAllData: async () => {
+        const { getProgramas, getPeriodos, getJornadas, getAsignaturas, getDocentes, getGrupos, getFacultades } = get();
         set({ loading: true, error: null });
         try {
-            const [p, per, j, a, d, g] = await Promise.all([
+            await Promise.all([
                 getProgramas(),
                 getPeriodos(),
                 getJornadas(),
                 getAsignaturas(),
                 getDocentes(),
                 getGrupos(),
+                getFacultades(),
             ]);
-
-            // Normalizar y mapear datos
-            const programasNormalized = Array.isArray(p)
-                ? p.map((programa) => ({
-                        ...programa,
-                        facultad_id: programa.id_facultad ?? programa.facultad_id,
-                    }))
-                : [];
-
-            const periodosNormalized = Array.isArray(per)
-                ? per.map((periodo) => ({
-                        ...periodo,
-                        inicio: periodo.fecha_inicio ?? periodo.inicio,
-                        fin: periodo.fecha_fin ?? periodo.fin,
-                        activo: periodo.activo ?? false,
-                    }))
-                : [];
-
-            const jornadasNormalized = Array.isArray(j) ? j : [];
-
-            const asignaturasNormalized = Array.isArray(a)
-                ? a.map((asignatura) => ({
-                        ...asignatura,
-                        programa_id: asignatura.id_programa ?? asignatura.programa_id,
-                        codigo: asignatura.codigo ?? '',
-                        creditos: asignatura.creditos ?? '',
-                    }))
-                : [];
-
-            const docentesNormalized = Array.isArray(d) ? d : [];
-
-            const gruposNormalized = Array.isArray(g)
-                ? g.map((grupo) => ({
-                        ...grupo,
-                        nombre: grupo.codigo_grupo ?? grupo.nombre,
-                        programa_id: grupo.id_programa ?? grupo.programa_id ?? null,
-                        semestre: grupo.semestre ?? null,
-                    }))
-                : [];
-
-            set({
-                programas: programasNormalized,
-                periodos: periodosNormalized,
-                jornadas: jornadasNormalized,
-                asignaturas: asignaturasNormalized,
-                docentes: docentesNormalized,
-                grupos: gruposNormalized,
-                gruposFiltrados: [],
-                asignaturasFiltradas: [],
-                loading: false,
-            });
         } catch (error) {
             console.error('Error al cargar datos iniciales:', error);
             set({
                 error: 'Error al cargar los datos iniciales',
-                loading: false,
             });
-        }
+        } finally {
+            set({ loading: false });
+        }  
     },
 
     loadGruposByPeriodoJornada: async (periodoId, jornadaId) => {
@@ -366,7 +327,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     createJornada: async (jornadaData) => {
         const { getJornadas } = get();
         try {
-            const newJornada = await createJornada(jornadaData);
+            await createJornada(jornadaData);
             await getJornadas();
         } catch (error) {
             console.error('Error al crear jornada:', error);
@@ -377,7 +338,7 @@ export const useAdminHorarioStore = create((set, get) => ({
     updateJornada: async (id, jornadaData) => {
         const { getJornadas } = get();
         try {
-            const updated = await updateJornada(id, jornadaData);
+            await updateJornada(id, jornadaData);
             await getJornadas();
         } catch (error) {
             console.error('Error al actualizar jornada:', error);
@@ -400,13 +361,28 @@ export const useAdminHorarioStore = create((set, get) => ({
     /**
      * Acciones CRUD para Asignaturas
      */
-    createAsignatura: async (asignaturaData) => {
+
+    getAsignaturas: async (programaId) => {
         try {
-            const newAsignatura = await createAsignatura(asignaturaData);
-            set((state) => ({
-                asignaturas: [...state.asignaturas, newAsignatura],
-            }));
-            return newAsignatura;
+            const asignaturas = await getAsignaturas(programaId);
+            const asignaturasNormalized = Array.isArray(asignaturas)
+                ? asignaturas.map((asignatura) => ({
+                        ...asignatura,
+                        nombre: asignatura.nombre ?? '',
+                    }))
+                : [];
+            set({ asignaturas: asignaturasNormalized });
+        } catch (error) {
+            console.error('Error al cargar asignaturas:', error);
+            set({ error: 'Error al cargar las asignaturas' });
+        }
+    },
+
+    createAsignatura: async (asignaturaData) => {
+        const { getAsignaturas } = get();
+        try {
+            await createAsignatura(asignaturaData);
+            await getAsignaturas();
         } catch (error) {
             console.error('Error al crear asignatura:', error);
             throw error;
@@ -414,14 +390,10 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     updateAsignatura: async (id, asignaturaData) => {
+        const { getAsignaturas } = get();
         try {
             const updated = await updateAsignatura(id, asignaturaData);
-            set((state) => ({
-                asignaturas: state.asignaturas.map((a) =>
-                    a.id === id ? updated : a
-                ),
-            }));
-            return updated;
+            await getAsignaturas();
         } catch (error) {
             console.error('Error al actualizar asignatura:', error);
             throw error;
@@ -436,6 +408,60 @@ export const useAdminHorarioStore = create((set, get) => ({
             }));
         } catch (error) {
             console.error('Error al eliminar asignatura:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Acciones CRUD para Facultades
+     */
+
+    getFacultades: async () => {
+        try {
+            const facultades = await getFacultades();
+            const facultadesNormalized = Array.isArray(facultades)
+                ? facultades.map((facultad) => ({
+                        ...facultad,
+                        nombre: facultad.nombre ?? '',
+                    }))
+                : [];
+            set({ facultades: facultadesNormalized });
+        } catch (error) {
+            console.error('Error al cargar facultades:', error);
+            set({ error: 'Error al cargar las facultades' });
+        }
+    },
+
+    createFacultad: async (facultadData) => {
+        const { getFacultades } = get();
+        try {
+            await createFacultad(facultadData);
+            await getFacultades();
+        } catch (error) {
+            console.error('Error al crear facultad:', error);
+            throw error;
+        }
+    },
+
+    updateFacultad: async (id, facultadData) => {
+        const { getFacultades } = get();
+        try {
+            await updateFacultad(id, facultadData);
+            await getFacultades();
+        } catch (error) {
+            console.error('Error al actualizar facultad:', error);
+            throw error;
+        }
+    },
+
+    deleteFacultad: async (id) => {
+        try {
+            await deleteFacultad(id);
+            set((state) => ({
+                facultades: state.facultades.filter((f) => f.id !== id),
+            }));
+        } catch (error) {
+            console.error('Error al eliminar facultad:', error);
             throw error;
         }
     },
@@ -464,9 +490,8 @@ export const useAdminHorarioStore = create((set, get) => ({
     createGrupo: async (grupoData) => {
         const { getGrupos } = get();
         try {
-            const newGrupo = await createGrupo(grupoData);
-            getGrupos();
-            return newGrupo;
+            await createGrupo(grupoData);
+            await getGrupos();
         } catch (error) {
             console.error('Error al crear grupo:', error);
             throw error;
@@ -477,7 +502,7 @@ export const useAdminHorarioStore = create((set, get) => ({
         const { getGrupos } = get();
         try {
             await updateGrupo(id, grupoData);
-            getGrupos();
+            await getGrupos();
             
         } catch (error) {
             console.error('Error al actualizar grupo:', error);
@@ -500,6 +525,33 @@ export const useAdminHorarioStore = create((set, get) => ({
     /**
      * Acciones CRUD para Programas
      */
+
+    getProgramas: async () => {
+        try {
+            const programas = await getProgramas();
+            const programasNormalized = Array.isArray(programas)
+                ? programas.map((programa) => ({
+                        ...programa,
+                    }))
+                : [];
+            set({ programas: programasNormalized });
+        } catch (error) {
+            console.error('Error al cargar programas:', error);
+            set({ error: 'Error al cargar los programas' });
+        }
+    },
+
+    getProgramaByAsignatura: async (asignatura_id) => {
+        try {
+            const programa = await getProgramaByAsignatura(asignatura_id);
+            set({ filtro: { ...get().filtro, programa } });
+            return programa;
+        } catch (error) {
+            console.error('Error al cargar programa por asignatura:', error);
+            set({ error: 'Error al cargar el programa para la asignatura seleccionada' });
+        }
+    },
+
     createPrograma: async (programaData) => {
         try {
             const newPrograma = await createPrograma(programaData);
@@ -537,6 +589,20 @@ export const useAdminHorarioStore = create((set, get) => ({
         } catch (error) {
             console.error('Error al eliminar programa:', error);
             throw error;
+        }
+    },
+
+    /**     
+     * get Docentes
+     */
+
+    getDocentes: async () => {
+        try {
+            const docentes = await getDocentes();
+            set({ docentes });
+        } catch (error) {
+            console.error('Error al cargar docentes:', error);
+            set({ error: 'Error al cargar los docentes' });
         }
     },
 }));
