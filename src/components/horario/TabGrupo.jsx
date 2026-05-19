@@ -1,16 +1,13 @@
-import { useState } from "react";
-import { createGrupo, updateGrupo, deleteGrupo } from "../../services/grupoService.js";
+import { use, useEffect, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 export function TabGrupos() {
-    const { grupos, setGrupos, periodos, jornadas } = useAdminHorarioStore();
+    const { grupos, setGrupos, periodos, jornadas, updateGrupo, createGrupo, deleteGrupo } = useAdminHorarioStore();
     // ── Estado Grupos ────────────────────────────────────────────────────────
     const [showGrupoForm, setShowGrupoForm] = useState(false);
     const [grupoForm,     setGrupoForm]     = useState({ codigo: "", id_periodo: "", id_jornada: "", cupo: "" });
     const [editGrupoId,   setEditGrupoId]   = useState(null);
-
-    const gruposFiltrados = grupos;
 
     // ── Handlers Grupos ──────────────────────────────────────────────────────
     const saveGrupo = async (e) => {
@@ -25,16 +22,6 @@ export function TabGrupos() {
         if (editGrupoId) {
             try {
                 await updateGrupo(editGrupoId, payload);
-                setGrupos(prev => prev.map(g => g.id === editGrupoId ? {
-                    ...g,
-                    ...payload,
-                    codigo: payload.codigo,
-                    id_periodo: payload.id_periodo,
-                    id_jornada: payload.id_jornada,
-                    periodo: periodos.find(p => p.id === payload.id_periodo)?.nombre ?? g.periodo,
-                    jornada: jornadas.find(j => j.id === payload.id_jornada)?.nombre ?? g.jornada,
-                    cupo: payload.cupo,
-                } : g));
                 setEditGrupoId(null);
             } catch (error) {
                 console.error("Error al actualizar grupo:", error);
@@ -42,16 +29,6 @@ export function TabGrupos() {
         } else {
             try {
                 const response = await createGrupo(payload);
-                const created = response.resultado ?? { ...payload };
-                setGrupos(prev => [...prev, {
-                    ...created,
-                    codigo: payload.codigo,
-                    id_periodo: payload.id_periodo,
-                    id_jornada: payload.id_jornada,
-                    periodo: periodos.find(p => p.id === payload.id_periodo)?.nombre ?? "",
-                    jornada: jornadas.find(j => j.id === payload.id_jornada)?.nombre ?? "",
-                    cupo: payload.cupo,
-                }]);
             } catch (error) {
                 console.error("Error al crear grupo:", error);
             }
@@ -63,7 +40,6 @@ export function TabGrupos() {
     const handleDeleteGrupo = async (id) => {
         try {
             await deleteGrupo(id);
-            setGrupos(prev => prev.filter(g => g.id !== id));
         } catch (error) {
             console.error("Error al eliminar grupo:", error);
         }
@@ -75,7 +51,7 @@ export function TabGrupos() {
                 <div>
                     <h2 className="font-semibold text-neutral-800">Grupos</h2>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                        {gruposFiltrados.length} grupos · cada grupo es el conjunto de estudiantes de un semestre
+                        {grupos.length} grupos · cada grupo es el conjunto de estudiantes de un semestre
                     </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -142,7 +118,7 @@ export function TabGrupos() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-50">
-                            {gruposFiltrados.map(g => {
+                            {grupos?.map(g => {
                                 return (
                                     <tr key={g.id} className="hover:bg-neutral-50/50 transition-colors">
                                         <td className={`${cx.td} font-medium`}>{g.codigo}</td>
@@ -170,10 +146,10 @@ export function TabGrupos() {
                                     </tr>
                                 );
                             })}
-                            {gruposFiltrados.length === 0 && (
+                            {grupos.length === 0 && (
                                 <tr>
                                     <td colSpan="5" className="px-5 py-10 text-center text-neutral-400 italic text-sm">
-                                        {gruposFiltrados.length === 0 ? "Sin grupos registrados" : ""}
+                                        {grupos.length === 0 ? "Sin grupos registrados" : ""}
                                     </td>
                                 </tr>
                             )}

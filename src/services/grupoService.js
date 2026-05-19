@@ -5,6 +5,11 @@ export const getGrupos = async () => {
     return response.data.resultado;
 };
 
+export const getGruposByPeriodoJornada = async (id_periodo, id_jornada) => {
+    const response = await api.get(`/get_grupos/filter?id_periodo=${id_periodo}&id_jornada=${id_jornada}`);
+    return response.data.resultado;
+};
+
 export const createGrupo = async (grupo) => {
     const response = await api.post("/create_grupo", grupo);
     return response.data;

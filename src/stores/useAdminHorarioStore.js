@@ -25,6 +25,7 @@ import {
 } from '../services/asignaturaService.js';
 import {
     getGrupos,
+    getGruposByPeriodoJornada,
     createGrupo,
     updateGrupo,
     deleteGrupo,
@@ -32,6 +33,7 @@ import {
 import { getDocentes } from '../services/userService.js';
 import { getDisponibilidadDocente } from '../services/disponibilidadService.js';
 import { getHorarioDocente } from '../services/horarioService.js';
+import { parseTime } from "../utils/schedule.js";
 
 /**
  * Store Zustand para AdminHorario
@@ -43,18 +45,21 @@ export const useAdminHorarioStore = create((set, get) => ({
     periodos: [],
     jornadas: [],
     asignaturas: [],
+    asignaturasFiltradas: [],
     docentes: [],
     grupos: [],
+    gruposFiltrados: [],
     asignaciones: [],
     disponibilidadDocente: [],
     filtro: {
-        periodo_id: '',
-        jornada_id: '',
-        docente_id: '',
-        programa_id: '',
+        periodo: '',
+        jornada: '',
+        docente: '',
+        programa: '',
     },
     activeTab: 'horario',
     loading: false,
+    loadingDispAsig: false,
     error: null,
 
     // ── Acciones de actualización individual ────────────────────────────────
@@ -62,12 +67,15 @@ export const useAdminHorarioStore = create((set, get) => ({
     setPeriodos: (periodos) => set({ periodos }),
     setJornadas: (jornadas) => set({ jornadas }),
     setAsignaturas: (asignaturas) => set({ asignaturas }),
+    setAsignaturasFiltradas: (asignaturasFiltradas) => set({ asignaturasFiltradas }),
     setDocentes: (docentes) => set({ docentes }),
     setGrupos: (grupos) => set({ grupos }),
+    setGruposFiltrados: (gruposFiltrados) => set({ gruposFiltrados }),
     setAsignaciones: (asignaciones) => set({ asignaciones }),
     setFiltro: (filtro) => set((state) => ({ filtro: { ...state.filtro, ...filtro } })),
     setActiveTab: (tab) => set({ activeTab: tab }),
     setLoading: (loading) => set({ loading }),
+    setLoadingDispAsig: (loadingDispAsig) => set({ loadingDispAsig }),
     setError: (error) => set({ error }),
     setDisponibilidadDocente: (disponibilidad) => set({ disponibilidadDocente: disponibilidad }),
 
@@ -75,18 +83,51 @@ export const useAdminHorarioStore = create((set, get) => ({
     resetFiltro: () =>
         set({
             filtro: {
-                periodo_id: '',
-                jornada_id: '',
-                docente_id: '',
-                programa_id: '',
+                periodo: '',
+                jornada: '',
+                docente: '',
+                programa: '',
             },
         }),
+
+    isDisponible: (dia, horaInicio, horaFin) => {
+        const { disponibilidadDocente } = get();
+        if (!disponibilidadDocente.length) return null;
+        const diaNum = dia;
+        const aStart = parseTime(horaInicio);
+        const aEnd   = parseTime(horaFin);
+        return disponibilidadDocente.some(s =>
+            s.dia_semana === diaNum &&
+            parseTime(s.hora_inicio) < aEnd &&
+            parseTime(s.hora_fin)   > aStart
+        );
+    },
+
+    getAsignacionPropia: (dia, hora) => {
+        const { asignaciones, filtro } = get();
+
+        return (asignaciones.find(a => 
+            a?.dia_semana  === dia &&
+            a?.hora_inicio === hora &&
+            a?.id_periodo  === parseInt(filtro.periodo?.id) &&
+            a?.id_jornada  === parseInt(filtro.jornada?.id) &&
+            a?.id_docente  === parseInt(filtro.docente?.id)
+        )) || null;
+    },
+
+    isPeriodoActual: (periodo) => {
+        const hoy = new Date();
+        const inicio = new Date(...((periodo?.fecha_inicio || '').split("-").map((v, i) => i === 1 ? parseInt(v) - 1 : parseInt(v)))); // Ajuste de mes
+        const fin = new Date(...((periodo?.fecha_fin || '').split("-").map((v, i) => i === 1 ? parseInt(v) - 1 : parseInt(v)))); // Ajuste de mes
+        return hoy >= inicio && hoy <= fin;
+    },
 
     /**
      * Cargar disponibilidad y horarios del docente
      * Se ejecuta cuando se cambian periodo, jornada o docente
      */
     loadDisponibilidadAndHorarios: async (docenteId, periodoId, jornadaId) => {
+        const { setLoadingDispAsig } = get();
         if (!docenteId || !periodoId) {
             set({
                 disponibilidadDocente: [],
@@ -96,6 +137,7 @@ export const useAdminHorarioStore = create((set, get) => ({
         }
 
         try {
+            setLoadingDispAsig(true);
             const [disponibilidad, horarios] = await Promise.all([
                 getDisponibilidadDocente(docenteId, periodoId),
                 getHorarioDocente(docenteId, periodoId),
@@ -112,6 +154,8 @@ export const useAdminHorarioStore = create((set, get) => ({
                 asignaciones: [],
                 error: 'Error al cargar disponibilidad y horarios',
             });
+        } finally {
+            setLoadingDispAsig(false);
         }
     },
 
@@ -177,6 +221,8 @@ export const useAdminHorarioStore = create((set, get) => ({
                 asignaturas: asignaturasNormalized,
                 docentes: docentesNormalized,
                 grupos: gruposNormalized,
+                gruposFiltrados: [],
+                asignaturasFiltradas: [],
                 loading: false,
             });
         } catch (error) {
@@ -188,15 +234,81 @@ export const useAdminHorarioStore = create((set, get) => ({
         }
     },
 
+    loadGruposByPeriodoJornada: async (periodoId, jornadaId) => {
+        if (!periodoId || !jornadaId) {
+            set({ gruposFiltrados: [] });
+            return;
+        }
+
+        try {
+            const grupos = await getGruposByPeriodoJornada(periodoId, jornadaId);
+            const gruposNormalized = Array.isArray(grupos)
+                ? grupos.map((grupo) => ({
+                        ...grupo,
+                        nombre: grupo.codigo_grupo ?? grupo.nombre,
+                        programa_id: grupo.id_programa ?? grupo.programa_id ?? null,
+                        semestre: grupo.semestre ?? null,
+                    }))
+                : [];
+            set({ gruposFiltrados: gruposNormalized });
+        } catch (error) {
+            console.error('Error al cargar grupos por periodo y jornada:', error);
+            set({ error: 'Error al cargar los grupos para el periodo y jornada seleccionados' });
+        }
+    },
+
+    loadAsignaturasByPrograma: async (programaId) => {
+        if (!programaId) {
+            set({ asignaturasFiltradas: [] });
+            return;
+        }
+
+        try {
+            const asignaturas = await getAsignaturas(programaId);
+            const asignaturasNormalized = Array.isArray(asignaturas)
+                ? asignaturas.map((asignatura) => ({
+                        ...asignatura,
+                        programa_id: asignatura.id_programa ?? asignatura.programa_id,
+                        codigo: asignatura.codigo ?? '',
+                        creditos: asignatura.creditos ?? '',
+                    }))
+                : [];
+            set({ asignaturasFiltradas: asignaturasNormalized });
+        } catch (error) {
+            console.error('Error al cargar asignaturas por programa:', error);
+            set({ error: 'Error al cargar las asignaturas para el programa seleccionado' });
+        }
+    },
+
     /**
      * Acciones CRUD para Periodos
      */
+
+    getPeriodos: async () => {
+        const { isPeriodoActual } = get();
+        try {
+            const periodos = await getPeriodos();
+            const periodosNormalized = Array.isArray(periodos)
+                ? periodos.map((periodo) => ({
+                        ...periodo,
+                        inicio: periodo.fecha_inicio ?? periodo.inicio,
+                        fin: periodo.fecha_fin ?? periodo.fin,
+                        activo: periodo.activo ?? false,
+                        actual: isPeriodoActual(periodo)
+                    }))
+                : [];
+            set({ periodos: periodosNormalized });
+        } catch (error) {
+            console.error('Error al cargar periodos:', error);
+            set({ error: 'Error al cargar los periodos' });
+        }
+    },
+
     createPeriodo: async (periodoData) => {
+        const { getPeriodos } = get();
         try {
             const newPeriodo = await createPeriodo(periodoData);
-            set((state) => ({
-                periodos: [...state.periodos, newPeriodo],
-            }));
+            await getPeriodos();
             return newPeriodo;
         } catch (error) {
             console.error('Error al crear período:', error);
@@ -205,11 +317,10 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     updatePeriodo: async (id, periodoData) => {
+        const { getPeriodos } = get();
         try {
             const updated = await updatePeriodo(id, periodoData);
-            set((state) => ({
-                periodos: state.periodos.map((p) => (p.id === id ? updated : p)),
-            }));
+            await getPeriodos();
             return updated;
         } catch (error) {
             console.error('Error al actualizar período:', error);
@@ -232,13 +343,31 @@ export const useAdminHorarioStore = create((set, get) => ({
     /**
      * Acciones CRUD para Jornadas
      */
+
+    getJornadas: async () => {
+        console.log("Cargando jornadas...");
+        try {
+            const jornadas = await getJornadas();
+            const jornadasNormalized = Array.isArray(jornadas)
+                ? jornadas.map((jornada) => ({
+                        ...jornada,
+                        hora_inicio: jornada.hora_inicio ?? '',
+                        hora_fin: jornada.hora_fin ?? '',
+                    }))
+                : [];
+            console.log("Jornadas normalizadas:", jornadasNormalized);
+            set({ jornadas: jornadasNormalized });
+        } catch (error) {
+            console.error('Error al cargar jornadas:', error);
+            set({ error: 'Error al cargar las jornadas' });
+        }
+    },
+
     createJornada: async (jornadaData) => {
+        const { getJornadas } = get();
         try {
             const newJornada = await createJornada(jornadaData);
-            set((state) => ({
-                jornadas: [...state.jornadas, newJornada],
-            }));
-            return newJornada;
+            await getJornadas();
         } catch (error) {
             console.error('Error al crear jornada:', error);
             throw error;
@@ -246,12 +375,10 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     updateJornada: async (id, jornadaData) => {
+        const { getJornadas } = get();
         try {
             const updated = await updateJornada(id, jornadaData);
-            set((state) => ({
-                jornadas: state.jornadas.map((j) => (j.id === id ? updated : j)),
-            }));
-            return updated;
+            await getJornadas();
         } catch (error) {
             console.error('Error al actualizar jornada:', error);
             throw error;
@@ -316,12 +443,29 @@ export const useAdminHorarioStore = create((set, get) => ({
     /**
      * Acciones CRUD para Grupos
      */
+    getGrupos: async () => {
+        try {
+            const grupos = await getGrupos();
+            const gruposNormalized = Array.isArray(grupos)
+                ? grupos.map((grupo) => ({
+                        ...grupo,
+                        nombre: grupo.codigo_grupo ?? grupo.nombre,
+                        programa_id: grupo.id_programa ?? grupo.programa_id ?? null,
+                        semestre: grupo.semestre ?? null,
+                    }))
+                : [];
+            set({ grupos: gruposNormalized });
+        } catch (error) {
+            console.error('Error al cargar grupos:', error);
+            set({ error: 'Error al cargar los grupos' });
+        }
+    },
+
     createGrupo: async (grupoData) => {
+        const { getGrupos } = get();
         try {
             const newGrupo = await createGrupo(grupoData);
-            set((state) => ({
-                grupos: [...state.grupos, newGrupo],
-            }));
+            getGrupos();
             return newGrupo;
         } catch (error) {
             console.error('Error al crear grupo:', error);
@@ -330,12 +474,11 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     updateGrupo: async (id, grupoData) => {
+        const { getGrupos } = get();
         try {
-            const updated = await updateGrupo(id, grupoData);
-            set((state) => ({
-                grupos: state.grupos.map((g) => (g.id === id ? updated : g)),
-            }));
-            return updated;
+            await updateGrupo(id, grupoData);
+            getGrupos();
+            
         } catch (error) {
             console.error('Error al actualizar grupo:', error);
             throw error;

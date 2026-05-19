@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 
 export function TabPeriodos() {
-    const { periodos, setPeriodos } = useAdminHorarioStore();
+    const { periodos, setPeriodos, updatePeriodo, deletePeriodo, createPeriodo } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
-    const [form,    setForm]    = useState({ nombre: "", inicio: "", fin: "", activo: false });
+    const [form,    setForm]    = useState({ nombre: "", inicio: "", fin: ""});
     const [editId,  setEditId]  = useState(null);
 
     const handleSave = async (e) => {
@@ -22,7 +22,7 @@ export function TabPeriodos() {
         } catch (error) {
             console.error("Error al guardar periodo:", error);
         }
-        setForm({ nombre: "", inicio: "", fin: "", activo: false });
+        setForm({ nombre: "", inicio: "", fin: "" });
         setShowForm(false);
     };
 
@@ -41,7 +41,7 @@ export function TabPeriodos() {
                     <h2 className="font-semibold text-neutral-800">Periodos / Semestres</h2>
                     <p className="text-xs text-neutral-400 mt-0.5">{periodos.length} periodos registrados</p>
                 </div>
-                <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm({ nombre: "", inicio: "", fin: "", activo: false }); }}
+                <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm({ nombre: "", inicio: "", fin: ""}); }}
                     className={cx.btnPrimary}>
                     {showForm ? "Cancelar" : "+ Nuevo"}
                 </button>
@@ -69,16 +69,7 @@ export function TabPeriodos() {
                                 onChange={e => setForm(f => ({ ...f, fin: e.target.value }))} />
                         </div>
                     </div>
-                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                        <input type="checkbox" className="w-4 h-4 accent-black rounded"
-                            checked={form.activo}
-                            onChange={e => setForm(f => ({ ...f, activo: e.target.checked }))} />
-                        <span className="text-sm text-neutral-700">Marcar como periodo activo</span>
-                    </label>
-                    <div className="flex gap-2">
-                        <button type="submit" className={cx.btnPrimary}>{editId ? "Actualizar" : "Agregar"}</button>
-                        <button type="button" onClick={() => { setShowForm(false); setEditId(null); }} className={cx.btnSecondary}>Cancelar</button>
-                    </div>
+                    <button type="submit" className={cx.btnPrimary}>{editId ? "Actualizar" : "Agregar"}</button>
                 </form>
             )}
 
@@ -100,14 +91,14 @@ export function TabPeriodos() {
                                 <td className={cx.td}>{p.inicio}</td>
                                 <td className={cx.td}>{p.fin}</td>
                                 <td className={cx.td}>
-                                    <span className={`${cx.badge} ${p.activo ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
-                                        {p.activo ? "Activo" : "Inactivo"}
+                                    <span className={`${cx.badge} ${p.actual ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
+                                        {p.actual ? "Activo" : "Inactivo"}
                                     </span>
                                 </td>
                                 <td className={`${cx.td} text-right`}>
                                     <div className="flex gap-2 justify-end">
                                         <button className={cx.btnEdit}
-                                            onClick={() => { setForm({ nombre: p.nombre, inicio: p.inicio, fin: p.fin, activo: p.activo }); setEditId(p.id); setShowForm(true); }}>
+                                            onClick={() => { setForm({ nombre: p.nombre, inicio: p.inicio, fin: p.fin }); setEditId(p.id); setShowForm(true); }}>
                                             Editar
                                         </button>
                                         <button className={cx.btnDanger} onClick={() => handleDelete(p.id)}>Eliminar</button>

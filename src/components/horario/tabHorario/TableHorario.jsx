@@ -1,9 +1,16 @@
 import { Slots } from "./Slots.jsx";
-import { formatTimeForApi } from "../../../utils/schedule.js";
+import { createSchedule, formatTimeForApi } from "../../../utils/schedule.js";
+import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DIA_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6 };
 
-export const TableHorario = ({ timeSlots, isDisponible, getAsignacionPropia, asignaturas, handleCellClick, docenteActual }) => {
+export const TableHorario = ({ handleCellClick }) => {
+    const { asignaturas, jornadas, filtro, isDisponible, getAsignacionPropia } = useAdminHorarioStore();
+
+    const { scheduleStart, scheduleEnd } = filtro.jornada ? createSchedule(filtro.jornada?.hora_inicio, filtro.jornada?.hora_fin, 45) : { scheduleStart: [], scheduleEnd: [] };
+    const timeSlots = scheduleStart.map((inicio, index) => ({ inicio, fin: scheduleEnd[index] }));
+
     return (
     <table className="w-full text-sm border-collapse table-fixed" style={{ minWidth: "600px" }}>
         <thead>
@@ -35,7 +42,8 @@ export const TableHorario = ({ timeSlots, isDisponible, getAsignacionPropia, asi
                     {DIAS.map((dia, i) => {
                         const asig  = getAsignacionPropia(i+1, formatTimeForApi(slot.inicio));
                         const asig_ = asignaturas.find(a => a.id === asig?.id_asignatura);
-                        const disp  = isDisponible(dia, slot.inicio, slot.fin);
+                        const disp  = isDisponible(DIA_NUM[dia], slot.inicio, slot.fin);
+                        console.log("asig:", asig, "asig_:", asig_, "disp:", disp);
                         return (
                             <td key={dia}
                                 onClick={() => handleCellClick(dia, slot)}
@@ -47,7 +55,7 @@ export const TableHorario = ({ timeSlots, isDisponible, getAsignacionPropia, asi
                                     <div className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-2.5 py-2.5 min-h-15 flex flex-col justify-between transition-all duration-150 shadow-sm hover:shadow-md w-full overflow-hidden min-w-0">
                                         <p className="text-[11px] font-semibold leading-tight whitespace-nowrap truncate">{asig_?.nombre ?? "—"}</p>
                                         <div className="mt-1.5 space-y-0.5">
-                                            <p className="text-[10px] text-neutral-400 truncate whitespace-nowrap overflow-hidden">{docenteActual?.primer_nombre ?? "—"} {docenteActual?.primer_apellido ?? "—"}</p>
+                                            <p className="text-[10px] text-neutral-400 truncate whitespace-nowrap overflow-hidden">{filtro.docente?.primer_nombre ?? "—"} {filtro.docente?.primer_apellido ?? "—"}</p>
                                         </div>
                                     </div>
                                 ) : disp ? (

@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { formatTimeForApi } from "../../utils/schedule.js";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 export function TabJornadas() {
-    const { jornadas, setJornadas } = useAdminHorarioStore();
+    const { jornadas, updateJornada, createJornada, deleteJornada } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", hora_inicio: "", hora_fin: "" });
     const [editId,  setEditId]  = useState(null);
+
+    useEffect(() => {
+        console.log("Jornadas actualizadas:", jornadas);
+    }, [jornadas]);
 
     const handleSave = async (e) => {
         e.preventDefault();

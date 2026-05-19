@@ -2,20 +2,18 @@ import { useState, useEffect } from "react";
 import { getDisponibilidadDocente } from "../../services/disponibilidadService.js";
 import { getHorarioDocente, crearHorario, updateHorario, deleteHorario, getHorarios } from "../../services/horarioService.js";
 import { cx } from "../../pages/AdminHorario.jsx";
-import { createSchedule, formatTimeForApi } from "../../utils/schedule.js";
+import { formatTimeForApi } from "../../utils/schedule.js";
 import { LoadingSpinner } from "../LoadingSpinner.jsx";
 import { Slots } from "./tabHorario/Slots.jsx";
 import { TableHorario } from "./tabHorario/TableHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { Error } from "../Error.jsx";
+import { parseTime } from "../../utils/schedule.js";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export function TabHorario() {
-    const { filtro, setFiltro, periodos, jornadas, programas, asignaturas, docentes, grupos, asignaciones, setAsignaciones } = useAdminHorarioStore();
-
-    useEffect(() => {
-        console.log(filtro);
-    }, [filtro]);
+    const { filtro, setFiltro, periodos, jornadas, programas, asignaturasFiltradas, asignaturas,  loadAsignaturasByPrograma, docentes, gruposFiltrados, loadGruposByPeriodoJornada, asignaciones, setAsignaciones, disponibilidadDocente, setDisponibilidadDocente, loadDisponibilidadAndHorarios, loadingDispAsig, isDisponible, getAsignacionPropia } = useAdminHorarioStore();
 
     const [modal,   setModal]   = useState(null);
     const [form,    setForm]    = useState({ asignatura_id: "", grupo_id: "", aula: "", _id: null });
@@ -23,102 +21,17 @@ export function TabHorario() {
     const [blockMsg,       setBlockMsg]       = useState("");
     const [conflictoGrupo, setConflictoGrupo] = useState(null);
 
-    const [dispDocente, setDispDocente] = useState([]);
-    const [loadingDisp, setLoadingDisp] = useState(false);
-    const [loadingAsignaciones, setLoadingAsignaciones] = useState(false);
-
-    const toMin = t => { const p = t.split(":"); return parseInt(p[0]) * 60 + parseInt(p[1] || 0); };
     const DIA_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6 };
 
-    const isDisponible = (dia, horaInicio, horaFin) => {
-        if (!dispDocente.length) return null;
-        const diaNum = DIA_NUM[dia];
-        const aStart = toMin(horaInicio);
-        const aEnd   = toMin(horaFin);
-        return dispDocente.some(s =>
-            s.dia_semana === diaNum &&
-            toMin(s.hora_inicio) < aEnd &&
-            toMin(s.hora_fin)   > aStart
-        );
-    };
+    const filtersReady =  filtro.periodo && filtro.jornada && filtro.docente;
 
     useEffect(() => {
-        if (!modal) return;
-        if (form.asignatura_id) {
-            setFiltro(f => ({ ...f, programa_id: asignaturas.find(a => a.id === parseInt(form.asignatura_id))?.programa_id || "" }));
-        }
-    }, [modal]);
-
-
-    useEffect(() => {
-        if (!filtro.docente_id || !filtro.periodo_id) {
-            setDispDocente([]);
-            return;
-        }
-        setLoadingDisp(true);
-        getDisponibilidadDocente(filtro.docente_id, filtro.periodo_id)
-            .then(data => setDispDocente(data))
-            .catch(error => {
-                console.error("Error al cargar disponibilidad docente:", error);
-                setDispDocente([]);
-            })
-            .finally(() => setLoadingDisp(false));
-    }, [filtro.docente_id, filtro.periodo_id]);
-
-    useEffect(() => {
-        const loadHorarioDocente = async () => {
-            if (!filtro.docente_id || !filtro.periodo_id || !filtro.jornada_id) {
-                setAsignaciones([]);
-                return;
-            }
-            setLoadingAsignaciones(true);
-            try {
-                const data = await getHorarioDocente(filtro.docente_id, filtro.periodo_id);
-                setAsignaciones(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error("Error al cargar el horario del docente:", error);
-                setAsignaciones([]);
-            } finally {
-                setLoadingAsignaciones(false);
-            }
-        };
-
-        loadHorarioDocente();
-    }, [filtro.docente_id, filtro.periodo_id, filtro.jornada_id, setAsignaciones]);
-
-    const jornadaActual = jornadas.find(j => j.id === parseInt(filtro.jornada_id));
-    const docenteActual = docentes.find(d => d.id === parseInt(filtro.docente_id));
-    const { scheduleStart, scheduleEnd } = jornadaActual ? createSchedule(jornadaActual.hora_inicio, jornadaActual.hora_fin, 45) : { scheduleStart: [], scheduleEnd: [] };
-    const timeSlots = scheduleStart.map((inicio, index) => ({ inicio, fin: scheduleEnd[index] }));
-
-    const asignaturasFiltradas = filtro.programa_id
-        ? asignaturas.filter(a => a.programa_id === parseInt(filtro.programa_id))
-        : asignaturas;
-
-    const gruposFiltrados = grupos.filter(g => g.id_jornada === parseInt(filtro.jornada_id));
-
-
-
-    // Solo asignaciones del docente seleccionado → lo que se muestra como tarjeta en la grilla
-    const getAsignacionPropia = (dia, hora) => 
-        asignaciones.find(a => 
-            a?.dia_semana  === dia &&
-            a?.hora_inicio === hora &&
-            a?.id_periodo  === parseInt(filtro.periodo_id) &&
-            a?.id_jornada  === parseInt(filtro.jornada_id) &&
-            a?.id_docente  === parseInt(filtro.docente_id)
-        );
-
-    const filtersReady = filtro.periodo_id && filtro.jornada_id && filtro.docente_id;
-
-    const showBlockMsg = (msg) => {
-        setBlockMsg(msg);
-        setTimeout(() => setBlockMsg(""), 3000);
-    };
+        console.log("Asignaturas filtradas:", asignaturasFiltradas);
+    }, [asignaturasFiltradas]);
 
     const handleCellClick = (dia, slot) => {
         if (!filtersReady) return;
-        const disp = isDisponible(dia, slot.inicio, slot.fin);
+        const disp = isDisponible(DIA_NUM[dia], slot.inicio, slot.fin);
         if (!disp) {
             showBlockMsg("Este docente no tiene disponibilidad en este bloque horario.");
             return;
@@ -130,6 +43,40 @@ export function TabHorario() {
             : { asignatura_id: "", grupo_id: "", aula: "", _id: null }
         );
         setModal({ dia, ...slot });
+    };
+
+    useEffect(() => {
+        if (!modal) return;
+        if (form.asignatura_id) {
+            const { programa_id, programa } = asignaturas.find(a => a.id === parseInt(form.asignatura_id))
+            if (programa_id && programa) {
+                setFiltro({ programa:  { id: programa_id, nombre: programa }});
+            }
+            else {
+                setFiltro({ programa: null });
+            }
+        }
+    }, [modal]);
+
+
+    useEffect(() => {
+        if (!filtro.docente || !filtro.periodo) {
+            setDisponibilidadDocente([]);
+            return;
+        }
+        loadDisponibilidadAndHorarios(filtro.docente.id, filtro.periodo.id, filtro.jornada?.id)
+    
+    }, [filtro.docente, filtro.periodo, filtro.jornada]);
+
+    useEffect(() => {
+        if (!filtro.programa) return;
+        loadAsignaturasByPrograma(filtro.programa.id);
+        loadGruposByPeriodoJornada(filtro.periodo?.id, filtro.jornada?.id);
+    }, [filtro.programa]);
+
+    const showBlockMsg = (msg) => {
+        setBlockMsg(msg);
+        setTimeout(() => setBlockMsg(""), 3000);
     };
 
     const handleGrupoChange = (grupoId) => {
@@ -144,9 +91,9 @@ export function TabHorario() {
                     a.id_grupo    === parseInt(grupoId) &&
                     a.dia_semana  === DIA_NUM[modal.dia] &&
                     a.hora_inicio === formatTimeForApi(modal.inicio) &&
-                    a.id_periodo  === parseInt(filtro.periodo_id) &&
-                    a.id_jornada  === parseInt(filtro.jornada_id) &&
-                    a.id_docente  !== parseInt(filtro.docente_id)
+                    a.id_periodo  === parseInt(filtro.periodo?.id) &&
+                    a.id_jornada  === parseInt(filtro.jornada?.id) &&
+                    a.id_docente  !== parseInt(filtro.docente?.id)
                 );
                 setConflictoGrupo(conflict ?? null);
             } catch (error) {
@@ -156,21 +103,19 @@ export function TabHorario() {
         g();
     };
 
-    const hasConflict = !!conflictoGrupo;
-
     const handleSave = async () => {
-        if (!form.asignatura_id || !form.grupo_id || hasConflict || !modal) return;
+        if (!form.asignatura_id || !form.grupo_id || !!conflictoGrupo || !modal) return;
         setSaving(true);
         try {
             const payload = {
                 id_grupo:      parseInt(form.grupo_id),
-                id_docente:    parseInt(filtro.docente_id),
+                id_docente:    parseInt(filtro.docente?.id),
                 dia_semana:    DIA_NUM[modal.dia],
                 hora_inicio:   formatTimeForApi(modal.inicio),
                 hora_fin:      formatTimeForApi(modal.fin),
                 id_asignatura: parseInt(form.asignatura_id),
-                id_periodo:    parseInt(filtro.periodo_id),
-                id_jornada:    parseInt(filtro.jornada_id)
+                id_periodo:    parseInt(filtro.periodo?.id),
+                id_jornada:    parseInt(filtro.jornada?.id)
             };
 
             if (form._id) {
@@ -179,7 +124,7 @@ export function TabHorario() {
                 await crearHorario(payload);
             }
 
-            const data = await getHorarioDocente(filtro.docente_id, filtro.periodo_id, filtro.jornada_id);
+            const data = await getHorarioDocente(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
             setAsignaciones(Array.isArray(data) ? data : []);
             setModal(null);
         } catch (error) {
@@ -194,7 +139,7 @@ export function TabHorario() {
         if (!id) return;
         try {
             await deleteHorario(id);
-            const data = await getHorarioDocente(filtro.docente_id, filtro.periodo_id, filtro.jornada_id);
+            const data = await getHorarioDocente(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
             setAsignaciones(Array.isArray(data) ? data : []);
             setModal(null);
         } catch (error) {
@@ -213,8 +158,8 @@ export function TabHorario() {
 
                     <div>
                         <label className={cx.label}>Periodo / Semestre</label>
-                        <select className={cx.input} value={filtro.periodo_id}
-                            onChange={e => setFiltro(({periodo_id: e.target.value}))}>
+                        <select className={cx.input} value={filtro.periodo?.id || ""}
+                            onChange={e => setFiltro({periodo: periodos.find(p => p.id === parseInt(e.target.value)) || null})}>
                             <option value="">Selecciona periodo</option>
                             {periodos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
@@ -222,8 +167,8 @@ export function TabHorario() {
 
                     <div>
                         <label className={cx.label}>Jornada</label>
-                        <select className={cx.input} value={filtro.jornada_id}
-                            onChange={e => setFiltro({jornada_id: e.target.value})}>
+                        <select className={cx.input} value={filtro.jornada?.id || ""}
+                            onChange={e => setFiltro({jornada: jornadas.find(j => j.id === parseInt(e.target.value)) || null})}>
                             <option value="">Selecciona jornada</option>
                             {jornadas.map(j => (
                                 <option key={j.id} value={j.id}>{j.nombre} ({j.hora_inicio}–{j.hora_fin})</option>
@@ -233,8 +178,8 @@ export function TabHorario() {
 
                     <div>
                         <label className={cx.label}>Docente</label>
-                        <select className={cx.input} value={filtro.docente_id}
-                            onChange={e => setFiltro({docente_id: e.target.value})}>
+                        <select className={cx.input} value={filtro.docente?.id || ""}
+                            onChange={e => setFiltro({docente: docentes.find(d => d.id === parseInt(e.target.value)) || null})}>
                             <option value="">Selecciona docente</option>
                             {docentes.map(d => <option key={d.id} value={d.id}>{d.primer_nombre} {d.primer_apellido}</option>)}
                         </select>
@@ -242,8 +187,8 @@ export function TabHorario() {
 
                     <div>
                         <label className={cx.label}>Programa académico</label>
-                        <select className={cx.input} value={filtro.programa_id}
-                            onChange={e => setFiltro({programa_id: e.target.value})}>
+                        <select className={cx.input} value={filtro.programa?.id || ""}
+                            onChange={e => setFiltro({programa: programas.find(p => p.id === parseInt(e.target.value)) || null})}>
                             <option value="">Todos los programas</option>
                             {programas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                         </select>
@@ -254,10 +199,7 @@ export function TabHorario() {
 
             {/* ── Banner: bloque horario no disponible ── */}
             {blockMsg && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium shadow-sm">
-                    <span className="w-5 h-5 rounded-full bg-red-100 border border-red-300 flex items-center justify-center shrink-0 text-red-600 font-bold text-xs">✕</span>
-                    {blockMsg}
-                </div>
+                <Error>{blockMsg}</Error>
             )}
 
             {/* ── Grilla ── */}
@@ -273,23 +215,23 @@ export function TabHorario() {
                     <div className="px-5 py-4 border-b border-neutral-100 flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h2 className="text-sm font-semibold text-neutral-800 truncate">
-                                {periodos.find(p => p.id === parseInt(filtro.periodo_id))?.nombre}
+                                {filtro.periodo?.nombre}
                                 <span className="mx-1.5 text-neutral-300">·</span>
-                                {jornadaActual?.nombre}
-                                {filtro.programa_id && (
+                                {filtro.jornada?.nombre}
+                                {filtro.programa?.id && (
                                     <>
                                         <span className="mx-1.5 text-neutral-300">·</span>
-                                        {programas.find(p => p.id === parseInt(filtro.programa_id))?.nombre}
+                                        {filtro.programa?.nombre}
                                     </>
                                 )}
                             </h2>
-                            {loadingDisp && (
+                            {loadingDispAsig && (
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <LoadingSpinner size="sm" />
                                     <p className="text-xs text-neutral-400">Cargando disponibilidad…</p>
                                 </div>
                             )}
-                            {!loadingDisp && !dispDocente.length && (
+                            {!loadingDispAsig && !disponibilidadDocente.length && (
                                 <p className="text-xs text-amber-600 mt-0.5">
                                     Este docente no tiene disponibilidad registrada para este periodo.
                                 </p>
@@ -297,9 +239,9 @@ export function TabHorario() {
                         </div>
 
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            {docenteActual && (
+                            {filtro.docente && (
                                 <span className="text-xs text-neutral-500">
-                                    Disponibilidad de: <strong className="text-neutral-700">{docenteActual.nombre}</strong>
+                                    Disponibilidad de: <strong className="text-neutral-700">{filtro.docente?.primer_nombre} {filtro.docente?.primer_apellido}</strong>
                                 </span>
                             )}
                             <div className="flex items-center gap-3 flex-wrap justify-end">
@@ -319,12 +261,7 @@ export function TabHorario() {
                     {/* Tabla responsive con scroll horizontal en móvil */}
                     <div className="overflow-x-auto">
                         <TableHorario
-                            timeSlots={timeSlots}
-                            isDisponible={isDisponible}
-                            getAsignacionPropia={getAsignacionPropia}
-                            asignaturas={asignaturas}
                             handleCellClick={handleCellClick}
-                            docenteActual={docenteActual}
                         />
                     </div>
                 </div>
@@ -342,7 +279,7 @@ export function TabHorario() {
                                 <h3 className="font-semibold text-neutral-800 mt-0.5 truncate">
                                     {modal.dia} · {modal.inicio}–{modal.fin}
                                 </h3>
-                                <p className="text-xs text-neutral-500 mt-0.5 truncate">{docenteActual?.primer_nombre} {docenteActual?.primer_apellido}</p>
+                                <p className="text-xs text-neutral-500 mt-0.5 truncate">{filtro.docente?.primer_nombre} {filtro.docente?.primer_apellido}</p>
                             </div>
                             <button
                                 onClick={() => setModal(null)}
@@ -358,11 +295,11 @@ export function TabHorario() {
                                 <select className={cx.input} value={form.asignatura_id}
                                     onChange={e => setForm(f => ({ ...f, asignatura_id: e.target.value }))}>
                                     <option value="">Selecciona asignatura</option>
-                                    {filtro.programa_id && (asignaturasFiltradas.map(a => (
+                                    {filtro.programa && (asignaturasFiltradas.map(a => (
                                         <option key={a.id} value={a.id}>{a.nombre}</option>
                                     )))}
                                 </select>
-                                {!filtro.programa_id && (
+                                {!filtro.programa && (
                                     <p className="text-xs text-red-400 mt-1">Selecciona un programa en los filtros para acotar.</p>
                                 )}
                             </div>
@@ -376,7 +313,7 @@ export function TabHorario() {
                                     onChange={e => handleGrupoChange(e.target.value)}
                                 >
                                     <option value="">Selecciona grupo</option>
-                                    {filtro.programa_id && gruposFiltrados.map(g =>  (
+                                    {filtro.programa && gruposFiltrados.map(g =>  (
                                             <option key={g.id} value={g.id}>
                                                 {g.codigo}
                                             </option>
@@ -386,7 +323,7 @@ export function TabHorario() {
                                     <p className="text-xs text-red-600 mt-1 font-medium">
                                         Ya asignado a <strong>{conflictoGrupo?.docente ?? "otro docente"}</strong> en este horario.
                                     </p>
-                                ) : !filtro.programa_id ? (
+                                ) : !filtro.programa ? (
                                     <p className="text-xs text-red-400 mt-1">Selecciona un programa para filtrar grupos.</p>
                                 ) : null}
                             </div>
@@ -397,7 +334,7 @@ export function TabHorario() {
                         <div className="flex gap-2 pt-1">
                             <button
                                 onClick={handleSave}
-                                disabled={saving || !form.asignatura_id || !form.grupo_id || hasConflict}
+                                disabled={saving || !form.asignatura_id || !form.grupo_id || !!conflictoGrupo}
                                 className={`${cx.btnPrimary} flex-1`}
                             >
                                 {saving ? "Guardando…" : "Guardar"}
