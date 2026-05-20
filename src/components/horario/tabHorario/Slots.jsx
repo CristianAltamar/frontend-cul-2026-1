@@ -1,4 +1,8 @@
-export const Slots = ({timeSlots, d, isDisponible}) => {
+import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore";
+
+export const Slots = ({ timeSlots, d }) => {
+    const { isDisponible } = useAdminHorarioStore();
+
     return (
         <div className="flex gap-0.5 mt-1.5 justify-center">
             {timeSlots.map((s, i) => {

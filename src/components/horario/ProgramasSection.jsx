@@ -3,23 +3,20 @@ import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 export function ProgramasSection() {
-    const { getProgramas, updatePrograma, deletePrograma, programas, setProgramas, facultades } = useAdminHorarioStore();
+    const { getProgramas, updatePrograma, deletePrograma, createPrograma, programas, facultades } = useAdminHorarioStore();
     const [showProgForm, setShowProgForm] = useState(false);
     const [progForm, setProgForm] = useState({ nombre: "", codigo: "", facultad_id: "" });
-    const [editProgId, setEditProgId] = useState(null);
+    const [editProg, setEditProg] = useState(null);
 
     const savePrograma = async (e) => {
         e.preventDefault();
         try {
             const payload = { ...progForm, id_facultad: progForm.facultad_id };
-            if (editProgId) {
-                await updatePrograma(editProgId, payload);
-                setProgramas(prev => prev.map(p => p.id === editProgId ? { ...p, ...progForm } : p));
-                setEditProgId(null);
+            if (editProg) {
+                await updatePrograma(editProg.id, payload);
+                setEditProg(null);
             } else {
-                const response = await createPrograma(payload);
-                const created = response.resultado ?? { ...payload };
-                setProgramas(prev => [...prev, { ...created, facultad_id: created.id_facultad ?? payload.id_facultad }]);
+                await createPrograma(payload);
             }
         } catch (error) {
             console.error("Error al guardar programa:", error);
@@ -31,7 +28,6 @@ export function ProgramasSection() {
     const handleDeletePrograma = async (id) => {
         try {
             await deletePrograma(id);
-            setProgramas(prev => prev.filter(p => p.id !== id));
         } catch (error) {
             console.error("Error al eliminar programa:", error);
         }
@@ -46,7 +42,7 @@ export function ProgramasSection() {
                 </div>
                 <button onClick={() => {
                     setShowProgForm(v => !v);
-                    setEditProgId(null);
+                    setEditProg(null);
                     setProgForm({ nombre: "", codigo: "", facultad_id: "" });
                 }} className={cx.btnPrimary}>
                     {showProgForm ? "Cancelar" : "+ Nuevo"}
@@ -64,7 +60,7 @@ export function ProgramasSection() {
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className={cx.label}>Código</label>
-                            <input required className={cx.input} placeholder="Ej: ISI" maxLength={8}
+                            <input required className={cx.input} placeholder="Ej: ISI" maxLength={20}
                                 value={progForm.codigo}
                                 onChange={e => setProgForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
                         </div>
@@ -78,15 +74,14 @@ export function ProgramasSection() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button type="submit" className={cx.btnPrimary}>{editProgId ? "Actualizar" : "Agregar"}</button>
-                        <button type="button" onClick={() => { setShowProgForm(false); setEditProgId(null); }} className={cx.btnSecondary}>Cancelar</button>
+                        <button type="submit" className={cx.btnPrimary}>{editProg ? "Actualizar" : "Agregar"}</button>
+                        <button type="button" onClick={() => { setShowProgForm(false); setEditProg(null); }} className={cx.btnSecondary}>Cancelar</button>
                     </div>
                 </form>
             )}
 
             <div className="divide-y divide-neutral-50">
                 {programas.map(p => {
-                    const fac = facultades.find(f => f.id === p.facultad_id);
                     return (
                         <div key={p.id}
                             className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-colors hover:bg-neutral-50`}
@@ -94,12 +89,12 @@ export function ProgramasSection() {
                             <div className="min-w-0">
                                 <p className={`text-sm font-medium truncate text-neutral-800`}>{p.nombre}</p>
                                 <p className={`text-xs mt-0.5 font-mono text-neutral-400`}>
-                                    {p.codigo} · {fac?.nombre ?? "—"}
+                                    {p.codigo} · {p?.nombre_facultad ?? "—"}
                                 </p>
                             </div>
                             <div className="flex gap-2 shrink-0 ml-3">
                                 <button className={cx.btnEdit}
-                                    onClick={() => { setProgForm({ nombre: p.nombre, codigo: p.codigo, facultad_id: p.facultad_id }); setEditProgId(p.id); setShowProgForm(true); }}>
+                                    onClick={() => { setProgForm({ nombre: p.nombre, codigo: p.codigo, facultad_id: p.id_facultad }); setEditProg(p); setShowProgForm(true); }}>
                                     Editar
                                 </button>
                                 <button className={cx.btnDanger} onClick={() => handleDeletePrograma(p.id)}>Eliminar</button>

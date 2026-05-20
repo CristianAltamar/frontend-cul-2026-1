@@ -553,12 +553,10 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     createPrograma: async (programaData) => {
+        const { getProgramas } = get();
         try {
-            const newPrograma = await createPrograma(programaData);
-            set((state) => ({
-                programas: [...state.programas, newPrograma],
-            }));
-            return newPrograma;
+            await createPrograma(programaData);
+            await getProgramas();
         } catch (error) {
             console.error('Error al crear programa:', error);
             throw error;
@@ -566,14 +564,10 @@ export const useAdminHorarioStore = create((set, get) => ({
     },
 
     updatePrograma: async (id, programaData) => {
+        const { getProgramas } = get();
         try {
-            const updated = await updatePrograma(id, programaData);
-            set((state) => ({
-                programas: state.programas.map((p) =>
-                    p.id === id ? updated : p
-                ),
-            }));
-            return updated;
+            await updatePrograma(id, programaData);
+            await getProgramas();
         } catch (error) {
             console.error('Error al actualizar programa:', error);
             throw error;

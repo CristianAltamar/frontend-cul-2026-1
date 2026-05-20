@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 
 export function FacultadesSection() {
-    const { getFacultades, updateFacultad, deleteFacultad, facultades, setFacultades } = useAdminHorarioStore();
+    const { getFacultades, updateFacultad, createFacultad, deleteFacultad, facultades, setFacultades } = useAdminHorarioStore();
     const [showFacForm, setShowFacForm] = useState(false);
-    const [facForm, setFacForm] = useState({ nombre: "", codigo: "" });
+    const [facForm, setFacForm] = useState({ nombre: "" });
     const [editFacId, setEditFacId] = useState(null);
 
     const saveFacultad = async (e) => {
@@ -14,14 +14,12 @@ export function FacultadesSection() {
             if (editFacId) {
                 await updateFacultad(editFacId, facForm);
             } else {
-                // eslint-disable-next-line no-unused-vars
-                const response = await createFacultad(facForm);
-                setFacultades(prev => [...prev, { ...facForm }]);
+                await createFacultad(facForm);
             }
         } catch (error) {
             console.error("Error al guardar facultad:", error);
         }
-        setFacForm({ nombre: "", codigo: "" });
+        setFacForm({ nombre: "" });
         setShowFacForm(false);
     };
 
@@ -40,7 +38,7 @@ export function FacultadesSection() {
                     <h3 className="font-semibold text-neutral-800">Facultades</h3>
                     <p className="text-xs text-neutral-400 mt-0.5">{facultades.length} registradas · clic para filtrar</p>
                 </div>
-                <button onClick={() => { setShowFacForm(v => !v); setEditFacId(null); setFacForm({ nombre: "", codigo: "" }); }}
+                <button onClick={() => { setShowFacForm(v => !v); setEditFacId(null); setFacForm({ nombre: "" }); }}
                     className={cx.btnPrimary}>
                     {showFacForm ? "Cancelar" : "+ Nueva"}
                 </button>
@@ -48,19 +46,11 @@ export function FacultadesSection() {
 
             {showFacForm && (
                 <form onSubmit={saveFacultad} className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-100 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className={cx.label}>Nombre</label>
-                            <input required className={cx.input} placeholder="Ej: Ingeniería"
-                                value={facForm.nombre}
-                                onChange={e => setFacForm(f => ({ ...f, nombre: e.target.value }))} />
-                        </div>
-                        <div>
-                            <label className={cx.label}>Código</label>
-                            <input required className={cx.input} placeholder="Ej: ING" maxLength={8}
-                                value={facForm.codigo}
-                                onChange={e => setFacForm(f => ({ ...f, codigo: e.target.value.toUpperCase() }))} />
-                        </div>
+                    <div>
+                        <label className={cx.label}>Nombre</label>
+                        <input required className={cx.input} placeholder="Ej: Ingeniería"
+                            value={facForm.nombre}
+                            onChange={e => setFacForm(f => ({ ...f, nombre: e.target.value }))} />
                     </div>
                     <div className="flex gap-2">
                         <button type="submit" className={cx.btnPrimary}>{editFacId ? "Actualizar" : "Agregar"}</button>
@@ -79,7 +69,7 @@ export function FacultadesSection() {
                         </div>
                         <div className="flex gap-2 shrink-0">
                             <button className={cx.btnEdit}
-                                onClick={() => { setFacForm({ nombre: f.nombre, codigo: f.codigo }); setEditFacId(f.id); setShowFacForm(true); }}>
+                                onClick={() => { setFacForm({ nombre: f.nombre }); setEditFacId(f.id); setShowFacForm(true); }}>
                                 Editar
                             </button>
                             <button className={cx.btnDanger} onClick={() => handleDeleteFacultad(f.id)}>Eliminar</button>

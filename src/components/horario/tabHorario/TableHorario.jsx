@@ -18,14 +18,13 @@ export const TableHorario = ({ handleCellClick }) => {
                 <th className="px-4 py-3 text-xs font-medium text-neutral-500 text-left border-r border-neutral-100 w-20 sticky left-0 bg-white z-10">
                     Hora
                 </th>
-                {DIAS.map(d => (
+                {DIAS.map((d, i) => (
                     <th key={d} className="px-2 py-2.5 text-center border-r border-neutral-100 last:border-r-0 bg-white w-40 overflow-hidden">
                         <span className="text-xs font-semibold text-neutral-500 tracking-wide whitespace-nowrap truncate block">{d}</span>
                         {timeSlots.length > 0 && (
                             <Slots
                                 timeSlots={timeSlots}
-                                d={d}
-                                isDisponible={isDisponible}
+                                d={i+1}
                             />
                         )}
                     </th>
@@ -42,7 +41,6 @@ export const TableHorario = ({ handleCellClick }) => {
                     {DIAS.map((dia, i) => {
                         const asig  = getAsignacionPropia(i+1, formatTimeForApi(slot.inicio));
                         const disp  = isDisponible(DIA_NUM[dia], slot.inicio, slot.fin);
-                        console.log("asig:", asig, "disp:", disp);
                         return (
                             <td key={dia}
                                 onClick={() => handleCellClick(dia, slot)}
