@@ -107,3 +107,15 @@ export const procesoDisponibilidad = (disponibilidad) => {
 
     return processed;
 };
+
+
+export function generateTimeSlots(horaInicio, horaFin, intervalMin = 60) {
+    const slots = [];
+    let cur = parseTime(horaInicio);
+    const end = parseTime(horaFin);
+    while (cur + intervalMin <= end) {
+        slots.push({ inicio: formatTimeForApi(cur), fin: formatTimeForApi(cur + intervalMin) });
+        cur += intervalMin;
+    }
+    return slots;
+}

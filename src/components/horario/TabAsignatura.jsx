@@ -1,6 +1,6 @@
-import { AsignaturasSection } from "./AsignaturasSection.jsx";
-import { FacultadesSection } from "./FacultadesSection.jsx";
-import { ProgramasSection } from "./ProgramasSection.jsx";
+import { AsignaturasSection } from "./tabAsignaturas/AsignaturasSection.jsx";
+import { FacultadesSection } from "./tabAsignaturas/FacultadesSection.jsx";
+import { ProgramasSection } from "./tabAsignaturas/ProgramasSection.jsx";
 import { useEffect, useState } from "react";
 
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { cx } from "../../pages/AdminHorario.jsx";
-import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { cx } from "../../../pages/AdminHorario.jsx";
+import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
 
 export function ProgramasSection() {
     const { getProgramas, updatePrograma, deletePrograma, createPrograma, programas, facultades } = useAdminHorarioStore();

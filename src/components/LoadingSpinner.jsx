@@ -17,7 +17,7 @@ export function LoadingSpinner({ size = "md", light = false }) {
 // Overlay de pantalla completa — usar mientras se carga una página o se guarda algo importante
 export function LoadingOverlay({ message = "Cargando..." }) {
     return (
-        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+        <div className="fixed inset-0 z-200 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
             <div className="relative w-12 h-12">
                 <div className="absolute inset-0 rounded-full border-[3px] border-neutral-100" />
                 <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-neutral-900 animate-spin" />

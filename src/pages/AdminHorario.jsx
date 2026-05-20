@@ -30,7 +30,7 @@ const TABS = [
 
 // ── Clases Tailwind reutilizables ─────────────────────────────────────────────
 export const cx = {
-    input:        "w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 text-sm text-neutral-800 disabled:opacity-50",
+    input:        "w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 text-sm text-neutral-800 disabled:opacity-50 cursor-pointer",
     label:        "block text-xs font-medium text-neutral-600 mb-1",
     btnPrimary:   "px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-neutral-800 active:bg-neutral-900 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
     btnSecondary: "px-4 py-2 bg-white text-neutral-700 border border-neutral-200 text-sm rounded-lg hover:bg-neutral-50 transition-colors font-medium cursor-pointer",
@@ -41,20 +41,6 @@ export const cx = {
     th:           "px-5 py-3.5 text-xs font-medium text-neutral-500 uppercase tracking-wider text-left",
     td:           "px-5 py-3.5 text-sm text-neutral-700",
 };
-
-// ── Utilidades ────────────────────────────────────────────────────────────────
-function generateTimeSlots(horaInicio, horaFin, intervalMin = 60) {
-    const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-    const toStr = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-    const slots = [];
-    let cur = toMin(horaInicio);
-    const end = toMin(horaFin);
-    while (cur + intervalMin <= end) {
-        slots.push({ inicio: toStr(cur), fin: toStr(cur + intervalMin) });
-        cur += intervalMin;
-    }
-    return slots;
-}
 
 export function AdminHorario() {
     const navigate = useNavigate();
@@ -90,7 +76,7 @@ export function AdminHorario() {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                                     activeTab === tab.id
                                         ? "border-neutral-900 text-neutral-900"
                                         : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-200"

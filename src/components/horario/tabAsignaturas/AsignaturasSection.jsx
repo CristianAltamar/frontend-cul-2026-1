@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { LoadingSpinner } from "../LoadingSpinner.jsx";
-import { cx } from "../../pages/AdminHorario.jsx";
-import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { LoadingSpinner } from "../../LoadingSpinner.jsx";
+import { cx } from "../../../pages/AdminHorario.jsx";
+import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
 import { use } from "react";
 
 export function AsignaturasSection() {
