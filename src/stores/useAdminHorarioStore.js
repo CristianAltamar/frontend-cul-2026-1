@@ -306,7 +306,6 @@ export const useAdminHorarioStore = create((set, get) => ({
      */
 
     getJornadas: async () => {
-        console.log("Cargando jornadas...");
         try {
             const jornadas = await getJornadas();
             const jornadasNormalized = Array.isArray(jornadas)
@@ -316,7 +315,6 @@ export const useAdminHorarioStore = create((set, get) => ({
                         hora_fin: jornada.hora_fin ?? '',
                     }))
                 : [];
-            console.log("Jornadas normalizadas:", jornadasNormalized);
             set({ jornadas: jornadasNormalized });
         } catch (error) {
             console.error('Error al cargar jornadas:', error);

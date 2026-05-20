@@ -1,8 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "../components/Layout.jsx";
 import { Login } from "../pages/Login.jsx";
-import { Register } from "../pages/Register.jsx";
-import { Home } from "../pages/Home.jsx";
 import { Horario } from "../pages/Horario.jsx";
 import { AdminPanel } from "../pages/Admin.jsx";
 import { AdminDocentes } from "../pages/AdminDocentes.jsx";
@@ -18,7 +16,6 @@ export function AppRoutes() {
             <Routes>
                 {/* Páginas sin navbar */}
                 <Route path="/login"    element={<Login />}     />
-                <Route path="/register" element={<Register />}  />
                 <Route path="/"         element={<Login />}       />
                 <Route path="/admin"    element={<AdminPanel />} />
                 <Route path="/docente"  element={<Docente />}    />

@@ -9,10 +9,6 @@ export function TabJornadas() {
     const [form,    setForm]    = useState({ nombre: "", hora_inicio: "", hora_fin: "" });
     const [editId,  setEditId]  = useState(null);
 
-    useEffect(() => {
-        console.log("Jornadas actualizadas:", jornadas);
-    }, [jornadas]);
-
     const handleSave = async (e) => {
         e.preventDefault();
         try {

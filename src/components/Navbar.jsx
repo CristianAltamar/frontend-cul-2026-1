@@ -54,9 +54,9 @@ export function Navbar() {
             <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
 
                 {/* Logo */}
-                <NavLink to="/" className="text-base font-semibold text-neutral-800 tracking-tight shrink-0">
+                <div className="text-base font-semibold text-neutral-800 tracking-tight shrink-0">
                     CUL <span className="text-neutral-400 font-normal">2026</span>
-                </NavLink>
+                </div>
 
                 {/* Links desktop */}
                 <div className="hidden md:flex items-center gap-6">
@@ -91,10 +91,10 @@ export function Navbar() {
                         <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
                                 <span className="text-xs font-semibold text-white leading-none">
-                                    {displayName[0].toUpperCase()}
+                                    {displayName[0].toUpperCase()}0
                                 </span>
                             </div>
-                            <span className="text-sm text-neutral-700 font-medium hidden lg:block max-w-[140px] truncate">
+                            <span className="text-sm text-neutral-700 font-medium hidden lg:block max-w-35 truncate">
                                 {displayName}
                             </span>
                         </div>
@@ -102,7 +102,7 @@ export function Navbar() {
                     {displayName && <span className="text-neutral-200">|</span>}
                     <button
                         onClick={handleLogout}
-                        className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium"
+                        className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium cursor-pointer"
                     >
                         Cerrar sesión
                     </button>
@@ -170,7 +170,7 @@ export function Navbar() {
                     <hr className="border-neutral-100" />
                     <button
                         onClick={handleLogout}
-                        className="text-left text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium"
+                        className="text-left text-sm text-neutral-500 hover:text-neutral-800 transition-colors font-medium cursor-pointer"
                     >
                         Cerrar sesión
                     </button>

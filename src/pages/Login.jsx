@@ -123,22 +123,13 @@ export function Login() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 mt-2 py-3 px-4 bg-white text-neutral-900 rounded-xl font-semibold text-sm hover:bg-white/90 active:scale-[0.98] transition-all focus:ring-2 focus:ring-white/50 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-full flex items-center justify-center gap-2 mt-2 py-3 px-4 bg-white text-neutral-900 rounded-xl font-semibold text-sm cursor-pointer hover:bg-white/90 active:scale-[0.98] transition-all focus:ring-2 focus:ring-white/50 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {loading && <LoadingSpinner size="sm" />}
                                     {loading ? "Ingresando…" : "Ingresar"}
                                 </button>
 
                             </form>
-
-                            <div className="text-center pt-1">
-                                <p className="text-sm text-white/40">
-                                    ¿No tienes cuenta?{" "}
-                                    <Link to="/register" className="text-white font-medium hover:underline transition-all">
-                                        Registrarse
-                                    </Link>
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
