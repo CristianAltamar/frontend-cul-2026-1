@@ -147,23 +147,33 @@ export const useAdminHorarioStore = create((set, get) => ({
 
         try {
             setLoadingDispAsig(true);
-            const [disponibilidad, horarios] = await Promise.all([
-                getDisponibilidadDocente(docenteId, periodoId),
-                getHorarioDocente(docenteId, periodoId),
-            ]);
+            const disponibilidad = await getDisponibilidadDocente(docenteId, periodoId)
 
             set({
                 disponibilidadDocente: Array.isArray(disponibilidad) ? disponibilidad : [],
-                asignaciones: Array.isArray(horarios) ? horarios : [],
             });
         } catch (error) {
             console.error('Error al cargar disponibilidad y horarios:', error);
             set({
                 disponibilidadDocente: [],
-                asignaciones: [],
-                error: 'Error al cargar disponibilidad y horarios',
+                error: 'Error al cargar disponibilidad',
             });
-        } finally {
+        }
+
+        try {
+            const horario = await getHorarioDocente(docenteId, periodoId)
+
+            set({
+                asignaciones: Array.isArray(horario) ? horario : [],
+            });
+        } catch (error) {
+            console.error('Error al cargar disponibilidad y horarios:', error);
+            set({
+                asignaciones: [],
+                error: 'Error al cargar disponibilidad',
+            });
+        } 
+        finally {
             setLoadingDispAsig(false);
         }
     },

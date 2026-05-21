@@ -38,7 +38,6 @@ export function Horario() {
 
             try {
                 const data = await getHorarioDocente(d.user_id, 1);
-                console.log("Horario cargado:", data);
                 const lista = data ?? [];
                 setHorario(lista);
 

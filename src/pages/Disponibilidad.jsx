@@ -8,41 +8,60 @@ import { useDisponibilidad } from "../hooks/useDisponibilidad.js";
 import { getPeriodos } from "../services/periodoService.js";
 import { use } from "react";
 import { LoadingOverlay, LoadingSpinner } from "../components/LoadingSpinner.jsx";
+import { getJornadas } from "../services/jornadaService.js";
 
-const startTime = "08:00";
-const endTime = "22:00:00";
 const durationMinutes = 45;
 
 export const Disponibilidad = () => {
-    const [semestre, setSemestre] = useState();
+    const [form, setForm] = useState({periodo: null, jornada: null});
     const [disponibilidad, setDisponibilidad] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const { buildDisponibilidadPayload } = useDisponibilidad();
     const [periodos, setPeriodos] = useState([]);
+    const [jornadas, setJornadas] = useState([]);
+    const [scheduleStart, setScheduleStart] = useState([]);
+    const [scheduleEnd, setScheduleEnd] = useState([]);
 
-    const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const { scheduleStart, scheduleEnd } = createSchedule(startTime, endTime, durationMinutes);
+    const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    useEffect(() => {
+        if (form.jornada) {
+            const { scheduleStart, scheduleEnd } = createSchedule(form.jornada.hora_inicio, form.jornada.hora_fin, durationMinutes);
+            setScheduleStart(scheduleStart);
+            setScheduleEnd(scheduleEnd);
+        }
+    }, [form]);
 
     const loadPeriodos = async () => {
         try {
             const data = await getPeriodos();
-            setSemestre(data.length > 0 ? data[0].id : null);
+            setForm(prev => ({ ...prev, periodo: data.length > 0 ? data[0] : null }));
             setPeriodos(data);
         } catch (err) {
             console.error("Error cargando periodos:", err);
         }
     };
 
+    const loadJornadas = async () => {
+        try {
+            const data = await getJornadas();
+            setForm(prev => ({ ...prev, jornada: data.length > 0 ? data[0] : null }));
+            setJornadas(data);
+        } catch (err) {
+            console.error("Error cargando jornadas:", err);
+        }
+    };
+
     const loadDisponibilidad = async () => {
+        if (!form.periodo) return;
         const token = localStorage.getItem('token');
         if (!token) { navigate("/login"); return; }
         const decodedToken = decodeToken(token);
         if (!decodedToken) { localStorage.removeItem('token'); navigate("/login"); return; }
         setLoading(true);
         try {
-            const data = await getDisponibilidadDocente(decodedToken.user_id, semestre);
+            const data = await getDisponibilidadDocente(decodedToken.user_id, form.periodo.id);
             const schedule = procesoDisponibilidad(data);
             setDisponibilidad(schedule || {});
         } catch (err) {
@@ -52,8 +71,8 @@ export const Disponibilidad = () => {
         }
     };
 
-    useEffect(() => { loadPeriodos(); }, []);
-    useEffect(() => { loadDisponibilidad(); }, [semestre]);
+    useEffect(() => { loadPeriodos(); loadJornadas() }, []);
+    useEffect(() => { loadDisponibilidad(); }, [form.periodo]);
 
     const handleCheckboxChange = (dia, horainicio, horafin) => {
         const key = `${dia}-${horainicio}-${horafin}`;
@@ -100,14 +119,27 @@ export const Disponibilidad = () => {
                         {periodos.map(p => (
                             <button
                                 key={p.id}
-                                onClick={() => setSemestre(p.id)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                                    semestre == p.id
+                                onClick={() => setForm({ ...form, periodo: p })}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
+                                    form.periodo.id == p.id
                                         ? "bg-neutral-900 text-white shadow-sm"
                                         : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                                 }`}
                             >
                                 {p.nombre}
+                            </button>
+                        ))}
+                        {jornadas.map(j => (
+                            <button
+                                key={j.id}
+                                onClick={() => setForm({ ...form, jornada: j })}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
+                                    form.jornada.id == j.id
+                                        ? "bg-neutral-900 text-white shadow-sm"
+                                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                                }`}
+                            >
+                                {j.nombre}
                             </button>
                         ))}
                         {totalSeleccionados > 0 && (
