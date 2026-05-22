@@ -1,34 +1,54 @@
 import { useEffect, useState } from "react";
 import { cx } from "../../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
+import { ConfirmModal } from "../../ConfirmModal.jsx";
 
 export function FacultadesSection() {
     const { getFacultades, updateFacultad, createFacultad, deleteFacultad, facultades, setFacultades } = useAdminHorarioStore();
     const [showFacForm, setShowFacForm] = useState(false);
     const [facForm, setFacForm] = useState({ nombre: "" });
     const [editFacId, setEditFacId] = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
-    const saveFacultad = async (e) => {
+    const saveFacultad = (e) => {
         e.preventDefault();
-        try {
-            if (editFacId) {
-                await updateFacultad(editFacId, facForm);
-            } else {
-                await createFacultad(facForm);
+        const action = editFacId ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar facultad' : 'Crear facultad',
+            message: `¿Estás seguro de que deseas ${action} la facultad "${facForm.nombre}"?`,
+            action: async () => {
+                try {
+                    if (editFacId) {
+                        await updateFacultad(editFacId, facForm);
+                    } else {
+                        await createFacultad(facForm);
+                    }
+                } catch (error) {
+                    console.error("Error al guardar facultad:", error);
+                }
+                setFacForm({ nombre: "" });
+                setShowFacForm(false);
             }
-        } catch (error) {
-            console.error("Error al guardar facultad:", error);
-        }
-        setFacForm({ nombre: "" });
-        setShowFacForm(false);
+        });
     };
 
-    const handleDeleteFacultad = async (id) => {
-        try {
-            await deleteFacultad(id);
-        } catch (error) {
-            console.error("Error al eliminar facultad:", error);
-        }
+    const handleDeleteFacultad = (id) => {
+        const facultad = facultades.find(f => f.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar facultad',
+            message: `¿Estás seguro de que deseas eliminar la facultad "${facultad?.nombre}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deleteFacultad(id);
+                } catch (error) {
+                    console.error("Error al eliminar facultad:", error);
+                }
+            }
+        });
     };
 
     return (
@@ -80,6 +100,19 @@ export function FacultadesSection() {
                     <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin facultades registradas</p>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await modal.action?.();
+                    setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
         </div>
     );
 }

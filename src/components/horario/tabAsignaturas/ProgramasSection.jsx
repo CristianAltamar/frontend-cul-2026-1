@@ -1,36 +1,56 @@
 import { useState } from "react";
 import { cx } from "../../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
+import { ConfirmModal } from "../../ConfirmModal.jsx";
 
 export function ProgramasSection() {
     const { getProgramas, updatePrograma, deletePrograma, createPrograma, programas, facultades } = useAdminHorarioStore();
     const [showProgForm, setShowProgForm] = useState(false);
     const [progForm, setProgForm] = useState({ nombre: "", codigo: "", facultad_id: "" });
     const [editProg, setEditProg] = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
-    const savePrograma = async (e) => {
+    const savePrograma = (e) => {
         e.preventDefault();
-        try {
-            const payload = { ...progForm, id_facultad: progForm.facultad_id };
-            if (editProg) {
-                await updatePrograma(editProg.id, payload);
-                setEditProg(null);
-            } else {
-                await createPrograma(payload);
+        const action = editProg ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar programa' : 'Crear programa',
+            message: `¿Estás seguro de que deseas ${action} el programa "${progForm.nombre}"?`,
+            action: async () => {
+                try {
+                    const payload = { ...progForm, id_facultad: progForm.facultad_id };
+                    if (editProg) {
+                        await updatePrograma(editProg.id, payload);
+                        setEditProg(null);
+                    } else {
+                        await createPrograma(payload);
+                    }
+                } catch (error) {
+                    console.error("Error al guardar programa:", error);
+                }
+                setProgForm({ nombre: "", codigo: "", facultad_id: "" });
+                setShowProgForm(false);
             }
-        } catch (error) {
-            console.error("Error al guardar programa:", error);
-        }
-        setProgForm({ nombre: "", codigo: "", facultad_id: "" });
-        setShowProgForm(false);
+        });
     };
 
-    const handleDeletePrograma = async (id) => {
-        try {
-            await deletePrograma(id);
-        } catch (error) {
-            console.error("Error al eliminar programa:", error);
-        }
+    const handleDeletePrograma = (id) => {
+        const programa = programas.find(p => p.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar programa',
+            message: `¿Estás seguro de que deseas eliminar el programa "${programa?.nombre}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deletePrograma(id);
+                } catch (error) {
+                    console.error("Error al eliminar programa:", error);
+                }
+            }
+        });
     };
 
     return (
@@ -106,6 +126,19 @@ export function ProgramasSection() {
                     <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin programas registrados</p>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await modal.action?.();
+                    setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
         </div>
     );
 }

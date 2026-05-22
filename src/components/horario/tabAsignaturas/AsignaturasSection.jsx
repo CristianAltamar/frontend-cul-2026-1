@@ -3,6 +3,7 @@ import { LoadingSpinner } from "../../LoadingSpinner.jsx";
 import { cx } from "../../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../../stores/useAdminHorarioStore.js";
 import { use } from "react";
+import { ConfirmModal } from "../../ConfirmModal.jsx";
 
 export function AsignaturasSection() {
     const { asignaturas, programas, getProgramaByAsignatura, getAsignaturas, createAsignatura, updateAsignatura, deleteAsignatura, loading } = useAdminHorarioStore();
@@ -10,6 +11,7 @@ export function AsignaturasSection() {
     const [form, setForm] = useState({ nombre: "", id_programa: "" });
     const [editId, setEditId] = useState(null);
     const [filterProg, setFilterProg] = useState("");
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
     useEffect(() => {
         if (!editId) return;
@@ -26,28 +28,46 @@ export function AsignaturasSection() {
         getAsignaturas(filterProg);
     }, [filterProg]);
 
-    const saveAsignatura = async (e) => {
+    const saveAsignatura = (e) => {
         e.preventDefault();
-        try {
-            if (editId) {
-                await updateAsignatura(editId, form);
-                setEditId(null);
-            } else {
-                const response = await createAsignatura(form);
+        const action = editId ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar asignatura' : 'Crear asignatura',
+            message: `¿Estás seguro de que deseas ${action} la asignatura "${form.nombre}"?`,
+            action: async () => {
+                try {
+                    if (editId) {
+                        await updateAsignatura(editId, form);
+                        setEditId(null);
+                    } else {
+                        const response = await createAsignatura(form);
+                    }
+                } catch (error) {
+                    console.error("Error al guardar asignatura:", error);
+                }
+                setForm({ nombre: "", id_programa: "" });
+                setShowForm(false);
             }
-        } catch (error) {
-            console.error("Error al guardar asignatura:", error);
-        }
-        setForm({ nombre: "", id_programa: "" });
-        setShowForm(false);
+        });
     };
 
-    const handleDelete = async (id) => {
-        try {
-            await deleteAsignatura(id);
-        } catch (error) {
-            console.error("Error al eliminar asignatura:", error);
-        }
+    const handleDelete = (id) => {
+        const asignatura = asignaturas.find(a => a.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar asignatura',
+            message: `¿Estás seguro de que deseas eliminar la asignatura "${asignatura?.nombre}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deleteAsignatura(id);
+                } catch (error) {
+                    console.error("Error al eliminar asignatura:", error);
+                }
+            }
+        });
     };
 
     if (loading) return <LoadingSpinner />;
@@ -139,6 +159,19 @@ export function AsignaturasSection() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await modal.action?.();
+                    setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
         </div>
     );
 }

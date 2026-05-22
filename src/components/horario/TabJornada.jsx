@@ -2,35 +2,55 @@ import { useEffect, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { formatTimeForApi } from "../../utils/schedule.js";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { ConfirmModal } from "../ConfirmModal.jsx";
 
 export function TabJornadas() {
     const { jornadas, updateJornada, createJornada, deleteJornada } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", hora_inicio: "", hora_fin: "" });
     const [editId,  setEditId]  = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
     const handleSave = async (e) => {
         e.preventDefault();
-        try {
-            if (editId) {
-                await updateJornada(editId, form);
-                setEditId(null);
-            } else {
-                await createJornada(form);
+        const action = editId ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar jornada' : 'Crear jornada',
+            message: `¿Estás seguro de que deseas ${action} la jornada "${form.nombre}"?`,
+            action: async () => {
+                try {
+                    if (editId) {
+                        await updateJornada(editId, form);
+                        setEditId(null);
+                    } else {
+                        await createJornada(form);
+                    }
+                } catch (error) {
+                    console.error("Error al guardar jornada:", error);
+                }
+                setForm({ nombre: "", hora_inicio: "", hora_fin: "" });
+                setShowForm(false);
             }
-        } catch (error) {
-            console.error("Error al guardar jornada:", error);
-        }
-        setForm({ nombre: "", hora_inicio: "", hora_fin: "" });
-        setShowForm(false);
+        });
     };
 
     const handleDelete = async (id) => {
-        try {
-            await deleteJornada(id);
-        } catch (error) {
-            console.error("Error al eliminar jornada:", error);
-        }
+        const jornada = jornadas.find(j => j.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Confirmar eliminación',
+            message: `¿Estás seguro de que deseas eliminar la jornada "${jornada?.nombre}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deleteJornada(id);
+                } catch (error) {
+                    console.error("Error al eliminar jornada:", error);
+                }
+            }
+        });
     };
 
     const durationLabel = (inicio, fin) => {
@@ -112,6 +132,18 @@ export function TabJornadas() {
                     <p className="px-5 py-10 text-center text-sm text-neutral-400 italic">Sin jornadas registradas</p>
                 )}
             </div>
+            <ConfirmModal 
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={() => {
+                    if (modal.action) modal.action();
+                    setModal(m => ({ ...m, isOpen: false }));
+                }}
+                onCancel={() => setModal(m => ({ ...m, isOpen: false }))}
+            />
         </div>
     );
 }

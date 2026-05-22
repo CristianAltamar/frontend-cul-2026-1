@@ -1,6 +1,7 @@
 import { use, useEffect, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { ConfirmModal } from "../ConfirmModal.jsx";
 
 export function TabGrupos() {
     const { grupos, setGrupos, periodos, jornadas, updateGrupo, createGrupo, deleteGrupo } = useAdminHorarioStore();
@@ -8,41 +9,60 @@ export function TabGrupos() {
     const [showGrupoForm, setShowGrupoForm] = useState(false);
     const [grupoForm,     setGrupoForm]     = useState({ codigo: "", id_periodo: "", id_jornada: "", cupo: "" });
     const [editGrupoId,   setEditGrupoId]   = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
     // ── Handlers Grupos ──────────────────────────────────────────────────────
-    const saveGrupo = async (e) => {
+    const saveGrupo = (e) => {
         e.preventDefault();
-        const payload = {
-            codigo: grupoForm.codigo,
-            id_periodo: parseInt(grupoForm.id_periodo),
-            id_jornada: parseInt(grupoForm.id_jornada),
-            cupo: grupoForm.cupo ? parseInt(grupoForm.cupo) : null,
-            estado: true,
-        };
-        if (editGrupoId) {
-            try {
-                await updateGrupo(editGrupoId, payload);
-                setEditGrupoId(null);
-            } catch (error) {
-                console.error("Error al actualizar grupo:", error);
+        const action = editGrupoId ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar grupo' : 'Crear grupo',
+            message: `¿Estás seguro de que deseas ${action} el grupo "${grupoForm.codigo}"?`,
+            action: async () => {
+                const payload = {
+                    codigo: grupoForm.codigo,
+                    id_periodo: parseInt(grupoForm.id_periodo),
+                    id_jornada: parseInt(grupoForm.id_jornada),
+                    cupo: grupoForm.cupo ? parseInt(grupoForm.cupo) : null,
+                    estado: true,
+                };
+                if (editGrupoId) {
+                    try {
+                        await updateGrupo(editGrupoId, payload);
+                        setEditGrupoId(null);
+                    } catch (error) {
+                        console.error("Error al actualizar grupo:", error);
+                    }
+                } else {
+                    try {
+                        const response = await createGrupo(payload);
+                    } catch (error) {
+                        console.error("Error al crear grupo:", error);
+                    }
+                }
+                setGrupoForm({ codigo: "", id_periodo: "", id_jornada: "", cupo: "" });
+                setShowGrupoForm(false);
             }
-        } else {
-            try {
-                const response = await createGrupo(payload);
-            } catch (error) {
-                console.error("Error al crear grupo:", error);
-            }
-        }
-        setGrupoForm({ codigo: "", id_periodo: "", id_jornada: "", cupo: "" });
-        setShowGrupoForm(false);
+        });
     };
 
-    const handleDeleteGrupo = async (id) => {
-        try {
-            await deleteGrupo(id);
-        } catch (error) {
-            console.error("Error al eliminar grupo:", error);
-        }
+    const handleDeleteGrupo = (id) => {
+        const grupo = grupos.find(g => g.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar grupo',
+            message: `¿Estás seguro de que deseas eliminar el grupo "${grupo?.codigo}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deleteGrupo(id);
+                } catch (error) {
+                    console.error("Error al eliminar grupo:", error);
+                }
+            }
+        });
     };
 
     return (
@@ -157,6 +177,19 @@ export function TabGrupos() {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await modal.action?.();
+                    setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
         </div>
     );
 }

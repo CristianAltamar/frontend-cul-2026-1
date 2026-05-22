@@ -9,6 +9,7 @@ import { getPeriodos } from "../services/periodoService.js";
 import { use } from "react";
 import { LoadingOverlay, LoadingSpinner } from "../components/LoadingSpinner.jsx";
 import { getJornadas } from "../services/jornadaService.js";
+import { ConfirmModal } from "../components/ConfirmModal.jsx";
 
 const durationMinutes = 45;
 
@@ -23,6 +24,7 @@ export const Disponibilidad = () => {
     const [jornadas, setJornadas] = useState([]);
     const [scheduleStart, setScheduleStart] = useState([]);
     const [scheduleEnd, setScheduleEnd] = useState([]);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
     const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     useEffect(() => {
@@ -79,23 +81,32 @@ export const Disponibilidad = () => {
         setDisponibilidad(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         const token = localStorage.getItem('token');
         if (!token) { alert("Debe iniciar sesión para guardar disponibilidad."); navigate('/login'); return; }
         const decodedToken = decodeToken(token);
         if (!decodedToken) { alert("Token inválido. Inicie sesión de nuevo."); localStorage.removeItem('token'); navigate('/login'); return; }
-        const payload = buildDisponibilidadPayload(disponibilidad, semestre, decodedToken);
+        const payload = buildDisponibilidadPayload(disponibilidad, form.periodo.id, decodedToken);
         if (payload.length === 0) { alert("Selecciona al menos un horario antes de guardar."); return; }
-        setSaving(true);
-        try {
-            await saveDisponibilidad(payload);
-            alert("Disponibilidad guardada correctamente");
-        } catch (err) {
-            console.error("Error guardando disponibilidad:", err);
-            alert("Error guardando disponibilidad");
-        } finally {
-            setSaving(false);
-        }
+        
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: 'Guardar disponibilidad',
+            message: `¿Estás seguro de que deseas guardar tu disponibilidad? Tienes ${totalSeleccionados} horarios seleccionados.`,
+            action: async () => {
+                setSaving(true);
+                try {
+                    await saveDisponibilidad(payload);
+                    alert("Disponibilidad guardada correctamente");
+                } catch (err) {
+                    console.error("Error guardando disponibilidad:", err);
+                    alert("Error guardando disponibilidad");
+                } finally {
+                    setSaving(false);
+                }
+            }
+        });
     };
 
     const totalSeleccionados = Object.values(disponibilidad).filter(Boolean).length;
@@ -260,6 +271,19 @@ export const Disponibilidad = () => {
                         {saving ? "Guardando…" : "Guardar disponibilidad"}
                     </button>
                 </div>
+
+                <ConfirmModal
+                    isOpen={modal.isOpen}
+                    title={modal.title}
+                    message={modal.message}
+                    type={modal.type}
+                    confirmText="Guardar"
+                    onConfirm={async () => {
+                        await modal.action?.();
+                        setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                    }}
+                    onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+                />
 
             </div>
         </div>

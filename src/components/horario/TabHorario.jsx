@@ -9,6 +9,7 @@ import { TableHorario } from "./tabHorario/TableHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
 import { Error } from "../Error.jsx";
 import { parseTime } from "../../utils/schedule.js";
+import { ConfirmModal } from "../ConfirmModal.jsx";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -20,6 +21,7 @@ export function TabHorario() {
     const [saving,  setSaving]  = useState(false);
     const [blockMsg,       setBlockMsg]       = useState("");
     const [conflictoGrupo, setConflictoGrupo] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
     const DIA_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6 };
 
@@ -95,45 +97,59 @@ export function TabHorario() {
 
     const handleSave = async () => {
         if (!form.asignatura_id || !form.grupo_id || !!conflictoGrupo || !modal) return;
-        setSaving(true);
-        try {
-            const payload = {
-                id_grupo:      parseInt(form.grupo_id),
-                id_docente:    parseInt(filtro.docente?.id),
-                dia_semana:    DIA_NUM[modal.dia],
-                hora_inicio:   formatTimeForApi(modal.inicio),
-                hora_fin:      formatTimeForApi(modal.fin),
-                id_asignatura: parseInt(form.asignatura_id),
-                id_periodo:    parseInt(filtro.periodo?.id),
-                id_jornada:    parseInt(filtro.jornada?.id)
-            };
+        const action = form._id ? 'actualizar' : 'crear';
+        setConfirmModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar horario' : 'Crear horario',
+            message: `¿Estás seguro de que deseas ${action} esta asignación?`,
+            action: async () => {
+                try {
+                    const payload = {
+                        id_grupo:      parseInt(form.grupo_id),
+                        id_docente:    parseInt(filtro.docente?.id),
+                        dia_semana:    DIA_NUM[modal.dia],
+                        hora_inicio:   formatTimeForApi(modal.inicio),
+                        hora_fin:      formatTimeForApi(modal.fin),
+                        id_asignatura: parseInt(form.asignatura_id),
+                        id_periodo:    parseInt(filtro.periodo?.id),
+                        id_jornada:    parseInt(filtro.jornada?.id)
+                    };
 
-            if (form._id) {
-                await updateHorario(form._id, payload);
-            } else {
-                await crearHorario(payload);
+                    if (form._id) {
+                        await updateHorario(form._id, payload);
+                    } else {
+                        await crearHorario(payload);
+                    }
+
+                    await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
+                    setModal(null);
+                } catch (error) {
+                    console.error("Error al guardar horario:", error);
+                    showBlockMsg("No se pudo guardar el horario. Revisa la consola.");
+                }
             }
-
-            await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
-            setModal(null);
-        } catch (error) {
-            console.error("Error al guardar horario:", error);
-            showBlockMsg("No se pudo guardar el horario. Revisa la consola.");
-        } finally {
-            setSaving(false);
-        }
+        });
     };
 
     const handleDelete = async (id) => {
         if (!id) return;
-        try {
-            await deleteHorario(id);
-            await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
-            setModal(null);
-        } catch (error) {
-            console.error("Error al eliminar horario:", error);
-            showBlockMsg("No se pudo eliminar el horario. Revisa la consola.");
-        }
+        setConfirmModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar horario',
+            message: '¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.',
+            action: async () => {
+                try {
+                    await deleteHorario(id);
+                    await loadDisponibilidadAndHorarios(filtro.docente?.id, filtro.periodo?.id, filtro.jornada?.id);
+                    setModal(null);
+                } catch (error) {
+                    console.error("Error al eliminar horario:", error);
+                    showBlockMsg("No se pudo eliminar el horario. Revisa la consola.");
+                }
+            }
+        });
     };
 
     return (
@@ -322,10 +338,10 @@ export function TabHorario() {
                         <div className="flex gap-2 pt-1">
                             <button
                                 onClick={handleSave}
-                                disabled={saving || !form.asignatura_id || !form.grupo_id || !!conflictoGrupo}
+                                disabled={!form.asignatura_id || !form.grupo_id || !!conflictoGrupo}
                                 className={`${cx.btnPrimary} flex-1`}
                             >
-                                {saving ? "Guardando…" : "Guardar"}
+                                Guardar
                             </button>
                             {form._id && (
                                 <button onClick={() => handleDelete(form._id)} className={cx.btnDanger}>Eliminar</button>
@@ -336,6 +352,19 @@ export function TabHorario() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                confirmText={confirmModal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await confirmModal.action?.();
+                    setConfirmModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setConfirmModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
         </div>
     );
 }

@@ -1,37 +1,57 @@
 import { use, useState } from "react";
 import { cx } from "../../pages/AdminHorario.jsx";
 import { useAdminHorarioStore } from "../../stores/useAdminHorarioStore.js";
+import { ConfirmModal } from "../ConfirmModal.jsx";
 
 
 export function TabPeriodos() {
-    const { periodos, setPeriodos, updatePeriodo, deletePeriodo, createPeriodo } = useAdminHorarioStore();
+    const { periodos, setPeriodos, updatePeriodo, deletePeriodo, createPeriodo,  } = useAdminHorarioStore();
     const [showForm, setShowForm] = useState(false);
     const [form,    setForm]    = useState({ nombre: "", inicio: "", fin: ""});
     const [editId,  setEditId]  = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '', action: null });
 
-    const handleSave = async (e) => {
+    const handleSave = (e) => {
         e.preventDefault();
-        const payload = { nombre: form.nombre, fecha_inicio: form.inicio, fecha_fin: form.fin };
-        try {
-            if (editId) {
-                await updatePeriodo(editId, payload);
-                setEditId(null);
-            } else {
-                await createPeriodo(payload);
+        const action = editId ? 'actualizar' : 'crear';
+        setModal({
+            isOpen: true,
+            type: 'info',
+            title: action === 'actualizar' ? 'Actualizar período' : 'Crear período',
+            message: `¿Estás seguro de que deseas ${action} el período "${form.nombre}"?`,
+            action: async () => {
+                const payload = { nombre: form.nombre, fecha_inicio: form.inicio, fecha_fin: form.fin };
+                try {
+                    if (editId) {
+                        await updatePeriodo(editId, payload);
+                        setEditId(null);
+                    } else {
+                        await createPeriodo(payload);
+                    }
+                    setForm({ nombre: "", inicio: "", fin: "" });
+                    setShowForm(false);
+                } catch (error) {
+                    console.error("Error al guardar periodo:", error);
+                }
             }
-        } catch (error) {
-            console.error("Error al guardar periodo:", error);
-        }
-        setForm({ nombre: "", inicio: "", fin: "" });
-        setShowForm(false);
+        });
     };
 
-    const handleDelete = async (id) => {
-        try {
-            await deletePeriodo(id);
-        } catch (error) {
-            console.error("Error al eliminar periodo:", error);
-        }
+    const handleDelete = (id) => {
+        const periodo = periodos.find(p => p.id === id);
+        setModal({
+            isOpen: true,
+            type: 'warning',
+            title: 'Eliminar período',
+            message: `¿Estás seguro de que deseas eliminar el período "${periodo?.nombre}"? Esta acción no se puede deshacer.`,
+            action: async () => {
+                try {
+                    await deletePeriodo(id);
+                } catch (error) {
+                    console.error("Error al eliminar periodo:", error);
+                }
+            }
+        });
     };
 
     return (
@@ -111,6 +131,19 @@ export function TabPeriodos() {
                         )}
                     </tbody>
                 </table>
+
+            <ConfirmModal
+                isOpen={modal.isOpen}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'warning' ? 'Eliminar' : 'Aceptar'}
+                onConfirm={async () => {
+                    await modal.action?.();
+                    setModal({ isOpen: false, type: 'info', title: '', message: '', action: null });
+                }}
+                onCancel={() => setModal({ isOpen: false, type: 'info', title: '', message: '', action: null })}
+            />
             </div>
         </div>
     );
